@@ -1,26 +1,115 @@
 @import "tailwindcss";
 
+* {
+  box-sizing: border-box;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --primary: #9810fa;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+.grid-background {
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='1' fill='oklch(62.078% 0.20567 259.002 / 2)'/%3E%3C/svg%3E");
+  /* background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 0 L 0 0 0 20' fill='none' stroke='oklch(62.3% 0.214 259.815)' stroke-width='0.5'/%3E%3C/svg%3E"); */
+  background-size: 20px 20px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c9cccf;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #959799;
+}
+
+.hero-font {
+  font-family: "Inter", sans-serif;
+  color: var(--foreground);
+}
+
+.underline-text {
+  position: relative;
+  display: inline-block;
+  z-index: 2;
+}
+
+.underline-text::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -8px;
+  width: calc(100% + 16px);
+  height: calc(100% + 8px);
+  background: oklch(62.3% 0.214 259.815);
+  border: 3px solid oklch(62.078% 0.20567 259.002);
+  border-radius: 12px;
+  transform: rotate(-2deg);
+  z-index: -1;
+}
+
+.highlight-text {
+  background: radial-gradient(
+    circle,
+    oklch(62.3% 0.214 259.815) 0%,
+    #7182ff 50%,
+    #3cff52 100%
+  );
+  background-size: 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent; /* fallback */
+  animation: textShine 3s ease-in-out infinite alternate;
+}
+
+@keyframes textShine {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+/* font sizes */
+.font-xl {
+  font-size: 48px;
+  font-weight: 700;
+}
+
+.font-lg {
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.font-md {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.font-sm {
+  font-size: 14px;
+  font-weight: 400;
 }
