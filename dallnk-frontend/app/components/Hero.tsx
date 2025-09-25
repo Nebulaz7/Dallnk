@@ -51,8 +51,9 @@ const Hero = () => {
               >
                 Dallnk
               </span>{" "}
-              is a decentralized community, where you can get & share available
-              data used to train AI model and earn
+              is a decentralized data crowdsourcing community, where you get
+              incentives by sharing data that can be used to train and improve
+              AI models.
             </p>
             {/* Cta Buttons */}
             <div className="flex items-center justify-center">
