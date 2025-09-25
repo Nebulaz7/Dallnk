@@ -127,7 +127,7 @@ const Navbar = () => {
         </div>
 
         {/* Menu Content */}
-        <div className="flex-1 bg-white pt-4  pb-0 rounded-2xl m-4 shadow-[2px_4px_0px_0px_#9810fa]">
+        <div className="flex-1 bg-white pt-4  pb-0 rounded-2xl m-4 shadow-[2px_4px_0px_0px_#2b7fff]">
           <ul className="flex flex-col gap-6 pl-6">
             <li className="gap-0">
               <Link

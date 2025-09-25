@@ -6,13 +6,13 @@ import Image from "next/image";
 
 const Hero = () => {
   return (
-    <section className="flex items-center justify-center min-h-[95vh] lg:px-20 py-1 md:pt-20 lg:pt-24 relative z-20">
+    <section className="flex items-center pt-14 justify-center min-h-[95vh] lg:px-20 lg:py-1 md:pt-20 lg:pt-24 relative z-20">
       <div className="max-w-7xl mx-auto w-full hero-font">
         <div className="flex items-center justify-center">
           <motion.img
             src="/verified-badge.svg"
             alt="verify"
-            className="absolute rotate-12 top-30 left-10 w-28"
+            className="absolute rotate-12 top-30 left-10 w-12 lg:w-28 z-0"
             animate={{ y: [0, -15, 0] }}
             transition={{ duration: 6, repeat: Infinity }}
           />
@@ -20,7 +20,7 @@ const Hero = () => {
           <motion.img
             src="/filecoin.svg"
             alt="filecoin"
-            className="absolute rotate-3 buttom-10 right-10 w-20"
+            className="absolute rotate-3 bottom-20 right-10 w-10 lg:w-20 z-0"
             animate={{ y: [0, -5, 0] }}
             transition={{ duration: 3, repeat: Infinity }}
           />
@@ -31,10 +31,10 @@ const Hero = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 1 }}
-            className="text-center space-y-6 px-6"
+            className="text-center space-y-6 px-6 relative z-10"
           >
             {/* ...existing code... */}
-            <h1 className="text-5xl lg:text-6xl font-light hero-font leading-tight mb-6">
+            <h1 className="text-left lg:text-center text-4xl lg:text-6xl font-light hero-font leading-tight mb-6">
               Get verified & secure{" "}
               <span className="relative">
                 <span className="underline-text font-bold">data</span>
@@ -52,7 +52,7 @@ const Hero = () => {
                 Dallnk
               </span>{" "}
               is a decentralized community, where you can get & share available
-              data used to train ai model and earn
+              data used to train AI model and earn
             </p>
             {/* Cta Buttons */}
             <div className="flex items-center justify-center">
@@ -74,7 +74,7 @@ const Hero = () => {
                     },
                   }}
                 >
-                  <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4 " />
+                  <ArrowUpRight className="w-3 h-3 md:w-6 md:h-6 " />
                 </motion.span>
               </motion.button>
             </div>

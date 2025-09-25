@@ -7,7 +7,7 @@
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;
-  --primary: #9810fa;
+  --primary: #2b7fff;
 }
 
 body {
@@ -46,7 +46,7 @@ body {
 }
 
 .hero-font {
-  font-family: "Inter", sans-serif;
+  font-family: "Georgia", sans-serif;
   color: var(--foreground);
 }
 
