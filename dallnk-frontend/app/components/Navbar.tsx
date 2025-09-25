@@ -62,6 +62,9 @@ const Navbar = () => {
         {/* Desktop Buttons */}
         <div className="hidden md:flex items-center gap-6">
           <motion.button
+            onClick={() => {
+              window.location.href = "/signin";
+            }}
             className="bg-blue-500 text-[16px] text-white px-4 cursor-pointer py-2 rounded-full flex items-center border-2 border-blue-500 gap-2 hover:bg-[#101010] hover:border-white transition duration-300"
             whileHover="hover"
             variants={{
