@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 const Footer = () => {
   return (
@@ -7,12 +8,22 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Logo/Brand */}
           <div className="flex items-center gap-2">
-            <span
-              className="text-xl font-bold text-white"
-              style={{ fontFamily: "orbitron, sans-serif" }}
-            >
-              Dallnk
-            </span>
+            <div className="flex gap-0">
+              <Image
+                src="/logo.svg"
+                alt="Dallnk logo"
+                content="fit-width"
+                className="rounded-full p-0"
+                height={60}
+                width={60}
+              />
+              <span
+                className="text-xl font-bold text-white inline-block mt-3"
+                style={{ fontFamily: "orbitron, sans-serif" }}
+              >
+                Dallnk
+              </span>
+            </div>
           </div>
 
           {/* Links */}
@@ -41,7 +52,7 @@ const Footer = () => {
 
           {/* Copyright */}
           <div className="text-gray-500 text-sm">
-            © 2024 Dallnk. All rights reserved.
+            © 2025 Dallnk. All rights reserved.
           </div>
         </div>
       </div>

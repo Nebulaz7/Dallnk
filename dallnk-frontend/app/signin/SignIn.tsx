@@ -2,12 +2,14 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { Wallet, ArrowUpRight } from "lucide-react";
 import "@fontsource/orbitron/700.css";
+import "../globals.css";
 
 const SignIn = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-black/90">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 grid-background">
       {/* Background glow effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[40%] -left-[20%] w-[70%] h-[70%] bg-sky-500/20 rounded-full blur-[120px] opacity-30"></div>
@@ -26,14 +28,24 @@ const SignIn = () => {
 
           {/* Logo */}
           <div className="flex justify-center mb-6 pb-3">
-            <div className="text-3xl font-bold">
-              Welcome To{" "}
-              <span
-                style={{ fontFamily: "orbitron, sans-serif" }}
-                className="text-white"
-              >
-                Dallnk
-              </span>
+            <div className="flex text-3xl font-bold">
+              <span className=" mt-3">Welcome To </span>
+              <div className="flex gap-0">
+                <Image
+                  src="/logo.svg"
+                  alt="Dallnk logo"
+                  content="fit-width"
+                  className="rounded-full p-0"
+                  height={60}
+                  width={60}
+                />
+                <span
+                  style={{ fontFamily: "orbitron, sans-serif" }}
+                  className="text-white inline-block mt-3"
+                >
+                  Dallnk
+                </span>
+              </div>
             </div>
           </div>
 

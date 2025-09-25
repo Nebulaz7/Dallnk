@@ -11,6 +11,19 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+const DoubleLineIcon = ({ size = 30, className = "" }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 30 30"
+    fill="none"
+    className={className}
+  >
+    <rect x="4" y="9" width="24" height="2" rx="1" fill="currentColor" />
+    <rect x="4" y="19" width="24" height="2" rx="1" fill="currentColor" />
+  </svg>
+);
+
 const Nav = () => {
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
 
@@ -29,7 +42,10 @@ const Nav = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex gap-2">
+            <div className="md:hidden cursor-pointer">
+              <DoubleLineIcon />
+            </div>
             <Link href="/" className="flex items-center">
               <h1
                 style={{ fontFamily: "orbitron, sans-serif" }}
