@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -61,9 +62,6 @@ const SignIn = () => {
         className="w-full max-w-md"
       >
         <div className="bg-gradient-to-r from-white/5 via-white/10 to-white/5 backdrop-blur-xl shadow-2xl shadow-black/20 rounded-3xl border border-white/10 p-8 relative overflow-hidden">
-          {/* Glass shine overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent rounded-3xl opacity-30 pointer-events-none"></div>
-
           {/* Logo */}
           <div className="flex justify-center mb-6 pb-3">
             <div className="flex text-3xl font-bold">
@@ -177,7 +175,7 @@ const SignIn = () => {
             </>
           )}
 
-          {/* Terms and privacy */}
+          {/* Terms */}
           <p className="mt-8 text-xs text-center text-white/50 pb-3">
             By connecting, you accept the{" "}
             <Link href="#" className="text-blue-400 hover:text-sky-300">
@@ -189,28 +187,6 @@ const SignIn = () => {
             </Link>
             .
           </p>
-
-          {/* Back to Home */}
-          <div className="mt-6 text-center">
-            <Link
-              href="/"
-              className="text-white/70 hover:text-white text-sm flex items-center justify-center gap-1 transition duration-300"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Back to Home
-            </Link>
-          </div>
         </div>
       </motion.div>
     </div>

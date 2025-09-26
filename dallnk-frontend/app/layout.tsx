@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 // import { Quicksand } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 
 // const quicksand = Quicksand({
 //   variable: "--quicksand",
@@ -17,9 +18,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       {/* className={`${quicksand.variable}`} */}
