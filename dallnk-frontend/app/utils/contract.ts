@@ -465,3 +465,28 @@ export const getActiveRequests = async () => {
 
   return requests;
 };
+
+export const checkConnection = (): string | null => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("walletAddress");
+  }
+  return null;
+};
+
+export const saveWalletAddress = (address: string): void => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("walletAddress", address);
+  }
+};
+
+export const disconnectWallet = (): void => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("walletAddress");
+  }
+};
+
+export const connectWalletWithStorage = async (): Promise<string> => {
+  const address = await connectWallet();
+  saveWalletAddress(address);
+  return address;
+};

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Quicksand } from "next/font/google";
+// import { Quicksand } from "next/font/google";
 import "./globals.css";
 
-const quicksand = Quicksand({
-  variable: "--quicksand",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-  adjustFontFallback: false,
-});
+// const quicksand = Quicksand({
+//   variable: "--quicksand",
+//   subsets: ["latin"],
+//   weight: ["400", "500", "600", "700"],
+//   display: "swap",
+//   adjustFontFallback: false,
+// });
 
 export const metadata: Metadata = {
   title: "dallnk",
@@ -22,7 +22,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${quicksand.variable}`}>{children}</body>
+      {/* className={`${quicksand.variable}`} */}
+      <body>{children}</body>
     </html>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Megaphone,
   UserRound,
@@ -8,8 +8,10 @@ import {
   ChevronDown,
   Copy,
   LogOut,
+  Wallet,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { checkConnection, disconnectWallet } from "../../utils/contract";
 
 const DoubleLineIcon = ({ size = 30, className = "" }) => (
   <svg
@@ -26,10 +28,40 @@ const DoubleLineIcon = ({ size = 30, className = "" }) => (
 
 const Nav = () => {
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
 
-  const copyAddress = () => {
-    navigator.clipboard.writeText("0x4...dummy34");
-    // You can add a toast notification here
+  // Check wallet connection on component mount
+  useEffect(() => {
+    const savedAddress = checkConnection();
+    setWalletAddress(savedAddress);
+  }, []);
+
+  const copyAddress = async () => {
+    if (walletAddress) {
+      try {
+        await navigator.clipboard.writeText(walletAddress);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy address:", err);
+      }
+    }
+  };
+
+  const handleDisconnect = () => {
+    disconnectWallet();
+    setWalletAddress(null);
+    setIsWalletDropdownOpen(false);
+    // Redirect to sign-in page
+    window.location.href = "/signin";
+  };
+
+  const formatAddress = (address: string, isMobile = false) => {
+    if (isMobile) {
+      return `${address.slice(0, 4)}...${address.slice(-2)}`;
+    }
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
   return (
@@ -77,14 +109,14 @@ const Nav = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-4">
-            {/* Create Quest Button */}
+            {/* Create Bounty Button */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-600 cursor-pointer text-white rounded-lg font-medium text-sm transition-all duration-200 shadow-lg shadow-blue-600/25"
             >
               <Plus className="w-4 h-4" />
-              <span>Create Quest</span>
+              <span>Create bounty</span>
             </motion.button>
 
             {/* Mobile Create Button */}
@@ -96,52 +128,81 @@ const Nav = () => {
               <Plus className="w-5 h-5" />
             </motion.button>
 
-            {/* Wallet Dropdown */}
-            <div className="relative">
-              <motion.button
-                onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 rounded-lg text-white text-sm font-medium transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="hidden sm:inline">0x4...dummy34</span>
-                <span className="sm:hidden">0x4...34</span>
-                <motion.div
-                  animate={{ rotate: isWalletDropdownOpen ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
+            {/* Wallet Section */}
+            {walletAddress ? (
+              <div className="relative">
+                <motion.button
+                  onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 rounded-lg text-white text-sm font-medium transition-all duration-200"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <ChevronDown className="w-4 h-4" />
-                </motion.div>
-              </motion.button>
-
-              {/* Wallet Dropdown Menu */}
-              <AnimatePresence>
-                {isWalletDropdownOpen && (
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="hidden sm:inline font-mono">
+                    {formatAddress(walletAddress)}
+                  </span>
+                  <span className="sm:hidden font-mono">
+                    {formatAddress(walletAddress, true)}
+                  </span>
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ rotate: isWalletDropdownOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50"
                   >
-                    <div className="py-2">
-                      <button
-                        onClick={copyAddress}
-                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors duration-200"
-                      >
-                        <Copy className="w-4 h-4" />
-                        Copy Address
-                      </button>
-                      <button className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-800 transition-colors duration-200">
-                        <LogOut className="w-4 h-4" />
-                        Disconnect
-                      </button>
-                    </div>
+                    <ChevronDown className="w-4 h-4" />
                   </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                </motion.button>
+
+                {/* Wallet Dropdown Menu */}
+                <AnimatePresence>
+                  {isWalletDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50"
+                    >
+                      <div className="py-2">
+                        {/* Full Address Display */}
+                        <div className="px-4 py-2 border-b border-gray-700">
+                          <p className="text-xs text-gray-400 mb-1">
+                            Wallet Address
+                          </p>
+                          <p className="text-sm text-white font-mono break-all">
+                            {walletAddress}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={copyAddress}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors duration-200"
+                        >
+                          <Copy className="w-4 h-4" />
+                          {copySuccess ? "Copied!" : "Copy Address"}
+                        </button>
+
+                        <button
+                          onClick={handleDisconnect}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-800 transition-colors duration-200"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Disconnect
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <Link
+                href="/signin"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all duration-200"
+              >
+                <Wallet className="w-4 h-4" />
+                <span className="hidden sm:inline">Connect Wallet</span>
+                <span className="sm:hidden">Connect</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -165,8 +226,18 @@ const Nav = () => {
           </Link>
           <button className="flex items-center gap-3 w-full px-3 py-2 text-blue-400 hover:text-blue-300 hover:bg-gray-800/50 rounded-lg transition-all duration-200">
             <Plus className="w-5 h-5" />
-            <span>Create Quest</span>
+            <span>Create Bounty</span>
           </button>
+
+          {/* Mobile Wallet Info */}
+          {walletAddress && (
+            <div className="mt-3 px-3 py-2 bg-gray-800/50 rounded-lg border border-gray-700">
+              <p className="text-xs text-gray-400 mb-1">Connected Wallet</p>
+              <p className="text-sm text-white font-mono">
+                {formatAddress(walletAddress)}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
