@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   HiOutlineShieldCheck, 
   HiExternalLink, 
@@ -17,8 +17,13 @@ import {
   HiOutlineShare
 } from 'react-icons/hi';
 
+// Mock contract functions since we don't have the actual utils
+const checkConnection = () => {
+  return localStorage.getItem('walletAddress');
+};
+
 // Mock avatar component since we don't have avvvatars-react
-const MockAvatar = ({ value, size }: { value: string, size: number }) => {
+const MockAvatar = ({ value, size }: { value: string; size: number }) => {
   const colors = ['#6366f1', '#ec4899', '#eab308', '#10b981', '#f97316'];
   const color = colors[value.length % colors.length];
   
@@ -108,8 +113,8 @@ const ProfileBanner = ({ walletAddress, username, reputationScore }: ProfileBann
 interface StatCardProps {
   icon: React.ReactNode;
   title: string;
-  value: string | number;
-  change: number | null;
+  value: string;
+  change?: number;
 }
 
 const StatCard = ({ icon, title, value, change }: StatCardProps) => (
@@ -178,8 +183,8 @@ const ActivityItem = ({ type, title, timestamp, status }: ActivityItemProps) => 
 interface BountyCardProps {
   title: string;
   description: string;
-  reward: string | number;
-  submissions: string | number;
+  reward: string;
+  submissions: number;
   deadline: string;
   status: string;
 }
@@ -233,7 +238,7 @@ const BountyCard = ({ title, description, reward, submissions, deadline, status 
 
 interface ContentCardProps {
   title: string;
-  image: string;
+  image?: string;
   views: number;
   likes: number;
   comments: number;
@@ -275,10 +280,17 @@ const ContentCard = ({ title, image, views, likes, comments, time }: ContentCard
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  
+  // Check wallet connection on component mount
+  useEffect(() => {
+    const savedAddress = checkConnection();
+    setWalletAddress(savedAddress);
+  }, []);
   
   const mockUser = {
-    walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
-    username: 'CryptoTrader_007',
+    walletAddress: walletAddress || '0x1234567890abcdef1234567890abcdef12345678',
+    username: walletAddress ? `User_${walletAddress.slice(2, 8)}` : 'Guest User',
     reputationScore: 2750,
   };
 
@@ -406,7 +418,7 @@ export default function ProfilePage() {
                 title="ML Training Dataset - E-commerce"
                 description="Need comprehensive e-commerce transaction data for machine learning model training. Must include customer behavior patterns and purchase history."
                 reward="150"
-                submissions="23"
+                submissions={23}
                 deadline="Dec 15, 2024"
                 status="active"
               />
@@ -414,7 +426,7 @@ export default function ProfilePage() {
                 title="Climate Research Data Collection"
                 description="Looking for weather station data from rural areas. Temperature, humidity, precipitation data from 2020-2024 preferred."
                 reward="200"
-                submissions="41"
+                submissions={41}
                 deadline="Nov 30, 2024"
                 status="active"
               />
@@ -422,7 +434,7 @@ export default function ProfilePage() {
                 title="Financial Market Analysis Dataset"
                 description="Stock price data with technical indicators for cryptocurrency markets. Need hourly data for past 2 years."
                 reward="300"
-                submissions="67"
+                submissions={67}
                 deadline="Oct 20, 2024"
                 status="completed"
               />
@@ -430,7 +442,7 @@ export default function ProfilePage() {
                 title="IoT Sensor Network Data"
                 description="Smart city sensor data including traffic, air quality, noise levels. Real-time or near real-time preferred."
                 reward="180"
-                submissions="12"
+                submissions={12}
                 deadline="Jan 10, 2025"
                 status="active"
               />
@@ -438,7 +450,7 @@ export default function ProfilePage() {
                 title="Healthcare Analytics Dataset"
                 description="Anonymized patient data for medical research. Must comply with privacy regulations and include treatment outcomes."
                 reward="400"
-                submissions="89"
+                submissions={89}
                 deadline="Sep 15, 2024"
                 status="closed"
               />
@@ -446,7 +458,7 @@ export default function ProfilePage() {
                 title="Social Media Sentiment Data"
                 description="Public social media posts with sentiment labels for NLP model training. Multiple languages preferred."
                 reward="120"
-                submissions="156"
+                submissions={156}
                 deadline="Nov 05, 2024"
                 status="active"
               />
