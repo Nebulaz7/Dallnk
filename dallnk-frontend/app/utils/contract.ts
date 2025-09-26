@@ -1,5 +1,6 @@
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ethereum?: any;
   }
 }
@@ -412,7 +413,7 @@ export const connectWallet = async () => {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       return await signer.getAddress();
-    } catch (error) {
+    } catch (_error) {
       throw new Error("Failed to connect wallet");
     }
   }

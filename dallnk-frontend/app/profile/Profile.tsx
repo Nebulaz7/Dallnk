@@ -752,7 +752,7 @@ export default function ProfilePage() {
                   <div className="text-center py-12">
                     <Gift className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                     <p className="text-gray-400">
-                      You haven't created any bounties yet.
+                      You haven&apos;t created any bounties yet.
                     </p>
                   </div>
                 ) : (
@@ -778,7 +778,7 @@ export default function ProfilePage() {
                   <div className="text-center py-12">
                     <FileText className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                     <p className="text-gray-400">
-                      You haven't submitted any data yet.
+                      You haven&apos;t submitted any data yet.
                     </p>
                   </div>
                 ) : (

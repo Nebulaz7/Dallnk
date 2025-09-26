@@ -33,8 +33,10 @@ const SignIn = () => {
     try {
       const address = await connectWalletWithStorage();
       setWalletAddress(address);
-    } catch (error: any) {
-      setError(error.message || "Failed to connect wallet");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to connect wallet";
+      setError(errorMessage);
       console.error("Wallet connection error:", error);
     } finally {
       setIsConnecting(false);
@@ -134,7 +136,7 @@ const SignIn = () => {
                 <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-2xl p-4 text-center">
                   <p className="text-red-400 text-sm">{error}</p>
                   <p className="text-white/50 text-xs mt-2">
-                    Make sure you're on Filecoin Calibration testnet
+                    Make sure you&apos;re on Filecoin Calibration testnet
                   </p>
                 </div>
               )}
