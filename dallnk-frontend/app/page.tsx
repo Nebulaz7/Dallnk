@@ -36,9 +36,9 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
+    <div className="cursor-crosshair">
       <div
-        className="relative min-h-screen grid-background overflow-hidden"
+        className="relative min-h-screen grid-background overflow-hidden "
         ref={prismContainerRef}
       >
         {/* Background Prism Animation */}

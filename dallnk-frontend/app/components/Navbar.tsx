@@ -5,6 +5,7 @@ import { useState } from "react";
 import { X, ArrowUpRight, Wallet, Feather, LaptopMinimal } from "lucide-react";
 import "@fontsource/orbitron/700.css";
 import Link from "next/link";
+import Image from "next/image";
 
 const MotionLink = motion(Link);
 
@@ -33,12 +34,22 @@ const Navbar = () => {
       className="fixed top-0 left-0 right-0 flex bg-[121212]/70 lg:bg-transparent justify-center border-gray-500 m-0 font-sm p-2 bg-primary backdrop-blur-xl z-30 lg:rounded-full lg:mt-5 lg:mx-6 lg:py-2 lg:border-1 lg:shadow-md lg:shadow-blue-500/50"
     >
       <nav className="flex justify-between items-center gap-5 w-full max-w-7xl px-2 md:px-6 h-[3.5rem] mx-auto">
-        <h1
-          style={{ fontFamily: "orbitron, sans-serif" }}
-          className="font-lg text-white"
-        >
-          Dallnk
-        </h1>
+        <div className="flex gap-0">
+          <Image
+            src="/logo.svg"
+            alt="Dallnk logo"
+            content="fit-width"
+            className="rounded-full p-0"
+            height={60}
+            width={60}
+          />
+          <h1
+            style={{ fontFamily: "orbitron, sans-serif" }}
+            className="font-lg text-white inline-block mt-3"
+          >
+            Dallnk
+          </h1>
+        </div>
 
         {/* Desktop Menu */}
         <ul className="hidden text-[18px] text-center md:flex gap-8 text-gray-100">

@@ -1,40 +1,54 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Wallet, ArrowUpRight } from "lucide-react";
+import Image from "next/image";
+import { Wallet, ArrowUpRight, CheckCircle } from "lucide-react";
+import {
+  connectWalletWithStorage,
+  checkConnection,
+  disconnectWallet,
+} from "../utils/contract";
 import "@fontsource/orbitron/700.css";
-import { useConnect, useAccount, useDisconnect } from "wagmi";
-import { metaMask } from "wagmi/connectors";
+import "../globals.css";
 
 const SignIn = () => {
-  const { connect, connectors, error, isPending } = useConnect();
-  const { isConnected, address } = useAccount();
-  const { disconnect } = useDisconnect();
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Debug: Log available connectors
-  console.log('Available connectors:', connectors.map(c => ({ id: c.id, name: c.name })));
+  // Check for existing connection on component mount
+  useEffect(() => {
+    const savedAddress = checkConnection();
+    if (savedAddress) {
+      setWalletAddress(savedAddress);
+    }
+  }, []);
 
-  const handleMetaMaskConnect = () => {
-    // Find MetaMask connector by checking different possible IDs
-    const metaMaskConnector = connectors.find(
-      (c) => c.id === "metaMask" || c.id === "io.metamask" || c.name?.toLowerCase().includes('metamask')
-    );
-    
-    if (metaMaskConnector) {
-      console.log('Using connector:', metaMaskConnector.id, metaMaskConnector.name);
-      connect({ connector: metaMaskConnector });
-    } else {
-      console.log('No MetaMask connector found, creating new one');
-      // Fallback: create a new MetaMask connector
-      const newMetaMaskConnector = metaMask();
-      connect({ connector: newMetaMaskConnector });
+  const handleConnectWallet = async () => {
+    setIsConnecting(true);
+    setError(null);
+
+    try {
+      const address = await connectWalletWithStorage();
+      setWalletAddress(address);
+    } catch (error: any) {
+      setError(error.message || "Failed to connect wallet");
+      console.error("Wallet connection error:", error);
+    } finally {
+      setIsConnecting(false);
     }
   };
 
+  const handleDisconnectWallet = () => {
+    disconnectWallet();
+    setWalletAddress(null);
+    setError(null);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-black/90">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 grid-background">
       {/* Background glow effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[40%] -left-[20%] w-[70%] h-[70%] bg-sky-500/20 rounded-full blur-[120px] opacity-30"></div>
@@ -50,14 +64,24 @@ const SignIn = () => {
         <div className="bg-gradient-to-r from-white/5 via-white/10 to-white/5 backdrop-blur-xl shadow-2xl shadow-black/20 rounded-3xl border border-white/10 p-8 relative overflow-hidden">
           {/* Logo */}
           <div className="flex justify-center mb-6 pb-3">
-            <div className="text-3xl font-bold">
-              Welcome To{" "}
-              <span
-                style={{ fontFamily: "orbitron, sans-serif" }}
-                className="text-white"
-              >
-                Dallnk
-              </span>
+            <div className="flex text-3xl font-bold">
+              <span className=" mt-3">Welcome To </span>
+              <div className="flex gap-0">
+                <Image
+                  src="/logo.svg"
+                  alt="Dallnk logo"
+                  content="fit-width"
+                  className="rounded-full p-0"
+                  height={60}
+                  width={60}
+                />
+                <span
+                  style={{ fontFamily: "orbitron, sans-serif" }}
+                  className="text-white inline-block mt-3"
+                >
+                  Dallnk
+                </span>
+              </div>
             </div>
           </div>
 
@@ -70,65 +94,90 @@ const SignIn = () => {
             >
               Dallnk
             </span>{" "}
-            you must sign in with a wallet
+            you must connect your wallet
           </p>
 
-          {/* Sign-in buttons */}
-          <div className="space-y-4 flex pb-5 justify-center text-center mx-auto">
-            {isConnected ? (
-              <div className="text-center">
-                <p className="text-green-400 mb-4">
-                  Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+          {/* Wallet Connection Status */}
+          {walletAddress ? (
+            <div className="mb-6">
+              <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 text-center">
+                <CheckCircle className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                <p className="text-green-400 font-medium mb-1">
+                  Wallet Connected
                 </p>
-                <motion.button
-                  className="bg-red-500 text-[16px] text-white px-4 flex cursor-pointer py-2 rounded-full items-center border-2 border-red-500 gap-2 hover:bg-[#101010] hover:border-white transition duration-300"
-                  onClick={() => disconnect()}
-                  whileHover="hover"
-                  variants={{ hover: { scale: 1.0 } }}
+                <p className="text-white/70 text-sm font-mono">
+                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                </p>
+                <button
+                  onClick={handleDisconnectWallet}
+                  className="mt-3 text-red-400 hover:text-red-300 text-sm underline"
                 >
-                  Disconnect Wallet
+                  Disconnect
+                </button>
+              </div>
+
+              {/* Continue to App Button */}
+              <div className="mt-6 text-center">
+                <Link
+                  href="/home" // or wherever your main app is
+                  className="bg-green-500 text-white px-6 py-3 rounded-full font-medium hover:bg-green-600 transition duration-300 inline-flex items-center gap-2"
+                >
+                  Continue to App
+                  <ArrowUpRight size={20} />
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Error Message */}
+              {error && (
+                <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-2xl p-4 text-center">
+                  <p className="text-red-400 text-sm">{error}</p>
+                  <p className="text-white/50 text-xs mt-2">
+                    Make sure you're on Filecoin Calibration testnet
+                  </p>
+                </div>
+              )}
+
+              {/* Connect Wallet Button */}
+              <div className="space-y-4 flex pb-5 justify-center text-center mx-auto">
+                <motion.button
+                  onClick={handleConnectWallet}
+                  disabled={isConnecting}
+                  className="bg-blue-500 text-[16px] text-white px-4 flex cursor-pointer py-2 rounded-full items-center border-2 border-blue-500 gap-2 hover:bg-[#101010] hover:border-white transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover="hover"
+                  variants={{
+                    hover: { scale: 1.0 },
+                  }}
+                  layout
+                >
+                  <Wallet className="inline mb-0" size={20} />
+                  {isConnecting ? "Connecting..." : "Connect Wallet"}
+                  {!isConnecting && (
+                    <motion.span
+                      className="text-lg font-extralight"
+                      variants={{
+                        hover: {
+                          x: 4,
+                          transition: {
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 10,
+                          },
+                        },
+                      }}
+                    >
+                      <ArrowUpRight className="inline-block mb-1" />
+                    </motion.span>
+                  )}
                 </motion.button>
               </div>
-            ) : (
-              <motion.button
-                className="bg-blue-500 text-[16px] text-white px-4 flex cursor-pointer py-2 rounded-full items-center border-2 border-blue-500 gap-2 hover:bg-[#101010] hover:border-white transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover="hover"
-                onClick={handleMetaMaskConnect}
-                disabled={isPending}
-                variants={{ hover: { scale: 1.0 } }}
-                layout
-              >
-                <Wallet className="inline mb-0" size={20} />
-                {isPending ? "Connecting..." : "Connect Wallet"}
-                <motion.span
-                  className="text-lg font-extralight"
-                  variants={{
-                    hover: {
-                      x: 4,
-                      transition: { type: "spring", stiffness: 400, damping: 10 },
-                    },
-                  }}
-                >
-                  <ArrowUpRight className="inline-block mb-1" />
-                </motion.span>
-              </motion.button>
-            )}
-
-            {error && (
-              <div className="text-center mt-4">
-                <p className="text-red-400 text-sm">
-                  Error: {error.message}
-                </p>
-                <p className="text-gray-400 text-xs mt-2">
-                  Make sure MetaMask is installed and enabled
-                </p>
-              </div>
-            )}
-          </div>
+            </>
+          )}
 
           {/* Terms */}
           <p className="mt-8 text-xs text-center text-white/50 pb-3">
-            By signing in, you accept the{" "}
+            By connecting, you accept the{" "}
             <Link href="#" className="text-blue-400 hover:text-sky-300">
               Terms of Service
             </Link>{" "}
