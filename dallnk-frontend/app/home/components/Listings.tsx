@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -13,6 +13,7 @@ import {
   HardDrive,
 } from "lucide-react";
 import Image from "next/image";
+import { getActiveRequests } from "../../utils/contract"; // 🔥 import from your utils
 
 // Skeleton Loading Component
 const ListingSkeleton = () => {
@@ -41,48 +42,19 @@ const ListingSkeleton = () => {
   );
 };
 
-// Sample data for listings
-const sampleListings = [
-  {
-    id: 1,
-    title: "Differentiate between ripe and unripe plantain",
-    creator: "0x3dummy..56",
-    description:
-      "A comprehensive dataset of high-resolution images capturing the subtle differences between ripe and unripe plantains in various lighting conditions and angles. Perfect for training computer vision models to accurately classify plantain ripeness.",
-    date: "15/06/2025",
-    submissions: { current: 1, max: 100 },
-    rewards: "6 FIL Tokens per High data",
-    format: "Images (JPEG, PNG)",
-    maxSize: "5MB",
-    image: "/listing-placeholder.svg",
-  },
-  {
-    id: 2,
-    title: "Natural Language Processing for Social Media",
-    creator: "0x7abc..123",
-    description:
-      "Curated collection of social media posts with sentiment analysis labels. Includes tweets, Facebook posts, and Instagram captions with corresponding emotional tags and engagement metrics.",
-    date: "12/06/2025",
-    submissions: { current: 45, max: 200 },
-    rewards: "4 FIL Tokens per submission",
-    format: "JSON, CSV",
-    maxSize: "2MB",
-    image: "/listing-placeholder.svg",
-  },
-];
-
 // Submission Modal Component
 const SubmissionModal = ({ isOpen, onClose, listing }) => {
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [description, setDescription] = useState("");
 
-  const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files);
-    setSelectedFiles(files);
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const files = Array.from(event.target.files);
+      setSelectedFiles(files);
+    }
   };
 
   const handleSubmit = () => {
-    // Handle submission logic here
     console.log("Submitting:", { files: selectedFiles, description, listing });
     onClose();
     setSelectedFiles([]);
@@ -123,7 +95,8 @@ const SubmissionModal = ({ isOpen, onClose, listing }) => {
                 {listing.title}
               </h4>
               <p className="text-gray-400 text-sm">
-                Accepted formats: {listing.format} | Max size: {listing.maxSize}
+                Accepted formats: {listing.format || "Any"} | Max size:{" "}
+                {listing.maxSize || "N/A"}
               </p>
             </div>
 
@@ -221,7 +194,7 @@ const ListingCard = ({ listing, onSubmit }) => {
       {/* Header */}
       <div className="flex items-start gap-4 mb-4">
         <Image
-          src={listing.image}
+          src={listing.image || "/listing-placeholder.svg"}
           alt="Listing"
           height={64}
           width={64}
@@ -248,7 +221,7 @@ const ListingCard = ({ listing, onSubmit }) => {
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="w-4 h-4 text-blue-400" />
           <span className="text-gray-400">Date:</span>
-          <span className="text-white">{listing.date}</span>
+          <span className="text-white">{listing.date || "N/A"}</span>
         </div>
 
         <div className="flex items-center gap-2 text-sm">
@@ -260,13 +233,13 @@ const ListingCard = ({ listing, onSubmit }) => {
         <div className="flex items-center gap-2 text-sm">
           <FileType className="w-4 h-4 text-purple-400" />
           <span className="text-gray-400">Format:</span>
-          <span className="text-white">{listing.format}</span>
+          <span className="text-white">{listing.format || "N/A"}</span>
         </div>
 
         <div className="flex items-center gap-2 text-sm">
           <HardDrive className="w-4 h-4 text-orange-400" />
           <span className="text-gray-400">Max size:</span>
-          <span className="text-white">{listing.maxSize}</span>
+          <span className="text-white">{listing.maxSize || "N/A"}</span>
         </div>
       </div>
 
@@ -300,9 +273,38 @@ const ListingCard = ({ listing, onSubmit }) => {
 };
 
 const Listings = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [listings, setListings] = useState<any[]>([]);
   const [selectedListing, setSelectedListing] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        setIsLoading(true);
+        const requests = await getActiveRequests(); // 🔥 live fetch
+        const formatted = requests.map((req: any) => ({
+          id: req.id,
+          title: req.description, // using description as title
+          creator: req.requester,
+          description: req.requirements || "No description provided.",
+          date: new Date().toLocaleDateString(), // fallback
+          submissions: { current: 0, max: 100 }, // placeholder
+          rewards: `${req.bounty} FIL`,
+          format: "Any",
+          maxSize: "N/A",
+          image: "/listing-placeholder.svg",
+        }));
+        setListings(formatted);
+      } catch (error) {
+        console.error("Failed to fetch listings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchListings();
+  }, []);
 
   const handleSubmit = (listing) => {
     setSelectedListing(listing);
@@ -344,40 +346,23 @@ const Listings = () => {
           </motion.button>
         </div>
 
-        {/* Quick Filters */}
-        <div className="flex flex-wrap gap-2 mt-4">
-          {["Computer Vision", "NLP", "Audio", "Time Series", "Tabular"].map(
-            (category, index) => (
-              <motion.button
-                key={category}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
-                className="px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white rounded-lg text-sm border border-gray-600 transition-all duration-200"
-              >
-                {category}
-              </motion.button>
-            )
-          )}
-        </div>
-
         {/* Listings */}
         <div>
           {isLoading ? (
-            // Show skeleton loading
             <>
               <ListingSkeleton />
               <ListingSkeleton />
             </>
-          ) : (
-            // Show actual listings
-            sampleListings.map((listing) => (
+          ) : listings.length > 0 ? (
+            listings.map((listing) => (
               <ListingCard
                 key={listing.id}
                 listing={listing}
                 onSubmit={handleSubmit}
               />
             ))
+          ) : (
+            <p className="text-gray-400 mt-6">No active requests found.</p>
           )}
         </div>
       </motion.div>
