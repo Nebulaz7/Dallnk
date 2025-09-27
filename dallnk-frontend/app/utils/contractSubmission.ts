@@ -484,26 +484,45 @@ export const submitDataToContract = async (
         transactionHash: transaction.hash,
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Contract submission failed:", error);
 
-    // Parse common error messages
+    const errorInfo =
+      typeof error === "object" && error !== null ? error : undefined;
+
+    let message: string | undefined;
+    let reason: string | undefined;
+
+    if (errorInfo && "message" in errorInfo) {
+      const value = (errorInfo as { message?: unknown }).message;
+      if (typeof value === "string") {
+        message = value;
+      }
+    }
+
+    if (errorInfo && "reason" in errorInfo) {
+      const value = (errorInfo as { reason?: unknown }).reason;
+      if (typeof value === "string") {
+        reason = value;
+      }
+    }
+
     let errorMessage = "Submission failed";
 
-    if (error.message?.includes("user rejected")) {
+    if (message?.includes("user rejected")) {
       errorMessage = "Transaction rejected by user";
-    } else if (error.message?.includes("insufficient funds")) {
+    } else if (message?.includes("insufficient funds")) {
       errorMessage = "Insufficient funds for gas";
-    } else if (error.message?.includes("Request does not exist")) {
+    } else if (message?.includes("Request does not exist")) {
       errorMessage = "Bounty request not found";
-    } else if (error.message?.includes("Request already assigned")) {
+    } else if (message?.includes("Request already assigned")) {
       errorMessage = "This bounty already has a submission";
-    } else if (error.message?.includes("Request already fulfilled")) {
+    } else if (message?.includes("Request already fulfilled")) {
       errorMessage = "This bounty has already been completed";
-    } else if (error.reason) {
-      errorMessage = error.reason;
-    } else if (error.message) {
-      errorMessage = error.message;
+    } else if (reason) {
+      errorMessage = reason;
+    } else if (message) {
+      errorMessage = message;
     }
 
     return {
@@ -569,6 +588,7 @@ export const checkSubmissionEligibility = async (
 
     return { eligible: true };
   } catch (error) {
+    console.error("Failed to check submission eligibility:", error);
     return { eligible: false, reason: "Unable to verify bounty status" };
   }
 };

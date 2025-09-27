@@ -413,7 +413,8 @@ export const connectWallet = async () => {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       return await signer.getAddress();
-    } catch (_error) {
+    } catch (error) {
+      console.error("Failed to connect wallet:", error);
       throw new Error("Failed to connect wallet");
     }
   }

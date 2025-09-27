@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Search,
   RefreshCw,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { ethers } from "ethers";
 import { checkConnection } from "../../utils/contract";
+import SubmissionModal from "./SubmissionModal";
 
 const CONTRACT_ADDRESS = "0x28791bF1c9F1F4385831236A53204dD90A1DEFAA";
 const CONTRACT_ABI = [
@@ -660,6 +661,10 @@ const Marketplace = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBounty, setSelectedBounty] = useState<DataRequest | null>(
+    null
+  );
 
   // Check wallet connection
   useEffect(() => {
@@ -714,14 +719,17 @@ const Marketplace = () => {
       alert("Please connect your wallet first");
       return;
     }
+    setSelectedBounty(bounty);
+    setIsModalOpen(true);
+  };
 
-    // For now, just show an alert. You can implement actual submission logic later
-    alert(
-      `Submitting data for bounty #${bounty.id}. This will open the submission interface.`
-    );
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedBounty(null);
+  };
 
-    // TODO: Implement actual submission modal or redirect to submission page
-    // You could integrate with your contract's submitDataForRequest function here
+  const handleSubmissionSuccess = () => {
+    fetchBounties();
   };
 
   return (
@@ -831,6 +839,13 @@ const Marketplace = () => {
           )}
         </div>
       </motion.div>
+
+      <SubmissionModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        bounty={selectedBounty}
+        onSuccess={handleSubmissionSuccess}
+      />
     </div>
   );
 };

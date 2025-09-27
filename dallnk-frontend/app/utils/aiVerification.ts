@@ -12,6 +12,18 @@ export interface VerificationResult {
   };
 }
 
+const allowedTypes = [
+  "text/csv",
+  "application/json",
+  "text/plain",
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "application/zip",
+  "application/x-zip-compressed",
+];
+const maxSize = 100 * 1024 * 1024; // 100MB
+
 export const verifyDataWithAI = async (
   cid: string,
   description: string,
@@ -27,7 +39,9 @@ export const verifyDataWithAI = async (
     const genAI = new GoogleGenerativeAI(
       process.env.NEXT_PUBLIC_GEMINI_API_KEY
     );
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
+    });
 
     const prompt = `
 You are an AI data verification specialist. Analyze this data submission for a bounty request.
@@ -81,8 +95,8 @@ Provide only the JSON response, no additional text.
         throw new Error("No JSON found in AI response");
       }
       aiResponse = JSON.parse(jsonMatch[0]);
-    } catch (parseError) {
-      console.error("Failed to parse AI response:", responseText);
+    } catch (error) {
+      console.error("Failed to parse AI response:", responseText, error);
       // Fallback analysis
       const isApproved =
         responseText.toLowerCase().includes("approved") ||
