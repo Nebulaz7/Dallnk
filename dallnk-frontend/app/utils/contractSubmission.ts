@@ -451,8 +451,7 @@ export const submitDataToContract = async (
     // Estimate gas
     const gasEstimate = await contract.submitDataForRequest.estimateGas(
       requestId,
-      ipfsHash,
-      description
+      ipfsHash
     );
 
     // Add 20% buffer to gas estimate
@@ -462,7 +461,6 @@ export const submitDataToContract = async (
     const transaction = await contract.submitDataForRequest(
       requestId,
       ipfsHash,
-      description,
       { gasLimit }
     );
 
