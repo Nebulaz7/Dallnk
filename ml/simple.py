@@ -12,13 +12,15 @@ import matplotlib.pyplot as plt
 from transformers import BertTokenizer, BertModel
 import torch
 
-# Load ResNet50 model
+
 model = ResNet50(weights='imagenet')
 model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
-
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+model_bert = BertModel.from_pretrained('bert-base-uncased')
 print("ResNet50 model loaded successfully!")
 print(f"Model output shape: {model.output_shape}")
 
+text_description = sender_text = "10,000 labeled images of cups" 
 img_path = img1_path = sender_img = "ml/sender_cup.jpg"
 img2_path = receiver_img = "ml/download.jpg"
 def extract_features(img_path):
@@ -34,15 +36,7 @@ def extract_features(img_path):
     return features.flatten()  # Shape: (2048,)
 
 def extract_text_features(text_description):
-    """
-    Extracts a feature vector from a text description using BERT.
-    
-    Args:
-        text_description (str): Text description (e.g., "a red cup on a table").
-    
-    Returns:
-        np.array: Feature vector from the [CLS] token (768-dim).
-    """
+
     inputs = tokenizer(text_description, return_tensors="pt", padding=True, truncation=True, max_length=128)
     with torch.no_grad():
         outputs = model_bert(**inputs)
@@ -50,7 +44,7 @@ def extract_text_features(text_description):
     return text_features.flatten()
 print("Feature extraction function ready.")
 
-def compare_images(img1_path, img2_path, threshold=0.95):
+def compare_images(img1_path, img2_path, threshold=0.5):
 
     features1 = extract_features(img1_path)  
     features2 = extract_features(img2_path)  
@@ -66,32 +60,33 @@ def compare_images(img1_path, img2_path, threshold=0.95):
         'features2': features2
     }
 
+result = compare_images(sender_img, receiver_img, threshold=0.5)
+def compare_text_image(text_description, img_path, text_weight=0.5, img_weight=0.5, threshold=0.5):
+    
+    text_features = extract_text_features(text_description)
+    img_features = extract_features(img_path)
+    # 
+    text_features = text_features / np.linalg.norm(text_features)
+    img_features = img_features / np.linalg.norm(img_features)
+    
+    similarity = cosine_similarity([text_features], [img_features])[0][0]
+    
 
-result = compare_images(sender_img, receiver_img, threshold=0.95)
+    combined_similarity = similarity * text_weight + similarity * img_weight
+    combined_similarity = min(combined_similarity, 1.0)
+    is_match = combined_similarity >= threshold
+    
+    return {
+        'combined_similarity': combined_similarity,
+        'is_match': is_match
+    }
+
+
+result = compare_text_image(sender_text, receiver_img_path)
+if result['is_match']:
+    print("Image matches description, proceeding with validation.")
+else:
+    print("Mismatch detected, flagging for review.")
 
 print(f"Similarity score: {result['similarity']:.4f}")
 print(f"Is a match? {result['is_match']}")
-
-# Optional: Visualize the images side-by-side
-if 'matplotlib' in globals():
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    img1 = image.load_img(sender_img)
-    img2 = image.load_img(receiver_img)
-    axes[0].imshow(img1)
-    axes[0].set_title('Sender Image')
-    axes[1].imshow(img2)
-    axes[1].set_title('Receiver Image')
-    plt.suptitle(f'Similarity: {result["similarity"]:.4f}')
-    plt.show()
-
-
-# In your bounty validation logic
-def validate_submission(new_img_path, existing_features_db):
-    new_features = extract_features(new_img_path)
-    similarities = [cosine_similarity([new_features], [feat])[0][0] for feat in existing_features_db]
-    if max(similarities) > 0.95:
-        return False, "Duplicate detected"
-    return True, "Valid"
-
-
-
