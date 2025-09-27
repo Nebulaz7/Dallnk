@@ -14,7 +14,6 @@ import {
   AlertTriangle,
   Loader2,
   Copy,
-  Calendar,
 } from "lucide-react";
 import {
   BountySubmission,
@@ -164,16 +163,8 @@ const BountyManagement: React.FC<BountyManagementProps> = ({
   );
 
   const handleDownload = useCallback(
-    async (ipfsHash: string, bountyId: string, bounty: BountySubmission) => {
+    async (ipfsHash: string, bountyId: string) => {
       if (!ipfsHash) return;
-
-      // Check if user can download (must be paid)
-      if (!bounty.isPaid) {
-        setError(
-          "You can only download data after accepting the submission and completing payment."
-        );
-        return;
-      }
 
       clearMessages();
       setDownloadingId(bountyId);
@@ -423,17 +414,13 @@ const BountyManagement: React.FC<BountyManagementProps> = ({
                 </AnimatePresence>
 
                 {/* Action Buttons */}
-                {hasSubmission && !bounty.isPaid && (
+                {hasSubmission && (
                   <div className="flex flex-wrap gap-3">
-                    {/* Download Button */}
+                    {/* Download Button - Available for submissions with IPFS hash */}
                     {bounty.ipfsHash && (
                       <button
                         onClick={() =>
-                          handleDownload(
-                            bounty.ipfsHash,
-                            bounty.bountyId,
-                            bounty
-                          )
+                          handleDownload(bounty.ipfsHash, bounty.bountyId)
                         }
                         disabled={isDownloading}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-300 rounded-lg hover:bg-blue-600/30 transition-colors disabled:opacity-50"
@@ -443,12 +430,12 @@ const BountyManagement: React.FC<BountyManagementProps> = ({
                         ) : (
                           <Download className="w-4 h-4" />
                         )}
-                        Preview Data
+                        {bounty.isPaid ? "Download Data" : "Preview Data"}
                       </button>
                     )}
 
-                    {/* Accept/Decline Buttons */}
-                    {!bounty.isVerified && (
+                    {/* Accept/Decline Buttons - Only show for unpaid submissions */}
+                    {!bounty.isPaid && !bounty.isVerified && (
                       <>
                         <button
                           onClick={() => handleAccept(bounty.bountyId)}
