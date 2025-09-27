@@ -7,4 +7,4 @@ import { ValidateService } from './validate.service';
   controllers: [ValidateController],
   providers: [ValidateService],
 })
-export class AppModule {}
+export class ValidateModule {}

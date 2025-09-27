@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { spawn } from 'child_process';
+import { join } from 'path';
 
 @Injectable()
 export class ValidateService {
   async runPython(data: any): Promise<any> {
     return new Promise((resolve, reject) => {
-      const py = spawn('python3', ['validate.py']);
+      // Build correct path to python script
+      const scriptPath = join(__dirname, '..', '..', 'api', 'validate.py');
+
+      const py = spawn('python3', [scriptPath]);
       let result = '';
       let error = '';
 
