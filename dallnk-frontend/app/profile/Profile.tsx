@@ -4,6 +4,11 @@ import React, { useState, useEffect } from "react";
 import { ExternalLink, Gift, Clock, User, FileText, Coins } from "lucide-react";
 import { checkConnection } from "../utils/contract";
 import { ethers } from "ethers";
+import BountyManagement from "./componenets/BountyManagement";
+import {
+  getUserBountiesWithSubmissions,
+  BountySubmission,
+} from "../utils/bountyManagement";
 
 const CONTRACT_ADDRESS = "0x28791bF1c9F1F4385831236A53204dD90A1DEFAA";
 const CONTRACT_ABI = [
@@ -627,6 +632,9 @@ export default function ProfilePage() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [allRequests, setAllRequests] = useState<DataRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userBountiesWithSubmissions, setUserBountiesWithSubmissions] =
+    useState<BountySubmission[]>([]);
+  const [loadingManagement, setLoadingManagement] = useState(false);
 
   useEffect(() => {
     const savedAddress = checkConnection();
@@ -634,22 +642,41 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    const loadRequests = async () => {
+    const loadAllData = async () => {
       if (!walletAddress) return;
 
       setLoading(true);
       try {
-        const requests = await getActiveRequests();
+        const [requests, managementBounties] = await Promise.all([
+          getActiveRequests(),
+          getUserBountiesWithSubmissions(walletAddress),
+        ]);
         setAllRequests(requests);
+        setUserBountiesWithSubmissions(managementBounties);
       } catch (error) {
-        console.error("Error loading requests:", error);
+        console.error("Error loading data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadRequests();
+    loadAllData();
   }, [walletAddress]);
+
+  // Function to load bounties for management
+  const loadBountiesForManagement = async () => {
+    if (!walletAddress) return;
+
+    setLoadingManagement(true);
+    try {
+      const bounties = await getUserBountiesWithSubmissions(walletAddress);
+      setUserBountiesWithSubmissions(bounties);
+    } catch (error) {
+      console.error("Error loading bounties for management:", error);
+    } finally {
+      setLoadingManagement(false);
+    }
+  };
 
   if (!walletAddress) {
     return (
@@ -686,6 +713,7 @@ export default function ProfilePage() {
 
   const tabs = [
     { id: "created", label: "Created Bounties" },
+    { id: "manage", label: "Review Submissions" },
     { id: "submitted", label: "Submitted Data" },
   ];
 
@@ -765,6 +793,22 @@ export default function ProfilePage() {
                       />
                     ))}
                   </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "manage" && (
+              <div className="space-y-6">
+                {loadingManagement ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-400">Loading submissions...</p>
+                  </div>
+                ) : (
+                  <BountyManagement
+                    bounties={userBountiesWithSubmissions}
+                    onBountyUpdate={loadBountiesForManagement}
+                  />
                 )}
               </div>
             )}
