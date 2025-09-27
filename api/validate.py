@@ -15,8 +15,7 @@ import json
 from http import HTTPStatus
 
 
-model = ResNet50(weights='imagenet')
-model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
+model_resnet = ResNet50(weights='imagenet', include_top=False, pooling='avg')
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model_bert = BertModel.from_pretrained('bert-base-uncased')
 print("ResNet50 model loaded successfully!")
