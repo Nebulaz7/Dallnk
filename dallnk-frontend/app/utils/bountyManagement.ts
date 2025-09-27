@@ -530,18 +530,26 @@ export const acceptSubmission = async (
         transactionHash: transaction.hash,
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Accept submission failed:", error);
 
     let errorMessage = "Failed to accept submission";
 
-    if (error.message?.includes("user rejected")) {
+    if (error instanceof Error && error.message?.includes("user rejected")) {
       errorMessage = "Transaction rejected by user";
-    } else if (error.message?.includes("insufficient funds")) {
+    } else if (
+      error instanceof Error &&
+      error.message?.includes("insufficient funds")
+    ) {
       errorMessage = "Insufficient funds for gas";
-    } else if (error.reason) {
+    } else if (
+      error &&
+      typeof error === "object" &&
+      "reason" in error &&
+      typeof error.reason === "string"
+    ) {
       errorMessage = error.reason;
-    } else if (error.message) {
+    } else if (error instanceof Error && error.message) {
       errorMessage = error.message;
     }
 
@@ -619,18 +627,26 @@ export const declineSubmission = async (
         transactionHash: transaction.hash,
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Decline submission failed:", error);
 
     let errorMessage = "Failed to decline submission";
 
-    if (error.message?.includes("user rejected")) {
+    if (error instanceof Error && error.message?.includes("user rejected")) {
       errorMessage = "Transaction rejected by user";
-    } else if (error.message?.includes("insufficient funds")) {
+    } else if (
+      error instanceof Error &&
+      error.message?.includes("insufficient funds")
+    ) {
       errorMessage = "Insufficient funds for gas";
-    } else if (error.reason) {
+    } else if (
+      error &&
+      typeof error === "object" &&
+      "reason" in error &&
+      typeof error.reason === "string"
+    ) {
       errorMessage = error.reason;
-    } else if (error.message) {
+    } else if (error instanceof Error && error.message) {
       errorMessage = error.message;
     }
 
@@ -699,18 +715,26 @@ export const releasePayment = async (
         transactionHash: transaction.hash,
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Release payment failed:", error);
 
     let errorMessage = "Failed to release payment";
 
-    if (error.message?.includes("user rejected")) {
+    if (error instanceof Error && error.message?.includes("user rejected")) {
       errorMessage = "Transaction rejected by user";
-    } else if (error.message?.includes("insufficient funds")) {
+    } else if (
+      error instanceof Error &&
+      error.message?.includes("insufficient funds")
+    ) {
       errorMessage = "Insufficient funds for gas";
-    } else if (error.reason) {
+    } else if (
+      error &&
+      typeof error === "object" &&
+      "reason" in error &&
+      typeof error.reason === "string"
+    ) {
       errorMessage = error.reason;
-    } else if (error.message) {
+    } else if (error instanceof Error && error.message) {
       errorMessage = error.message;
     }
 
