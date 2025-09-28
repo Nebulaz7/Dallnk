@@ -547,12 +547,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Next.js Team**: For the excellent React framework
 - **Storacha**: For seamless IPFS integration
 
-## 📞 Support
-
-- **Documentation**: [docs.dallnk.com](https://docs.dallnk.com)
-- **Discord**: [Join our community](https://discord.gg/dallnk)
-- **Issues**: [GitHub Issues](https://github.com/cridiv/Dallnk/issues)
-- **Email**: support@dallnk.com
+## 👨‍💻 Authors
+Aderemi Ademola –  (X: @cridiv)
+Olaniyi Ezekiel –  (X: @)
+Peters Joshua – (X: @joshpet77)
 
 ---
 
