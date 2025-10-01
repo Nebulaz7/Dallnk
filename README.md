@@ -548,7 +548,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Storacha**: For seamless IPFS integration
 
 ## 👨‍💻 Authors
-Aderemi Ademola –  (X: @cridiv)
+Aderemi Ademola –  (X: @crid_iv)
 Olaniyi Ezekiel –  (X: @)
 Peters Joshua – (X: @joshpet77)
 
