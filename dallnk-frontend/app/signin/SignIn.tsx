@@ -54,7 +54,7 @@ const SignIn = () => {
       {/* Background glow effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[40%] -left-[20%] w-[70%] h-[70%] bg-sky-500/20 rounded-full blur-[120px] opacity-30"></div>
-        <div className="absolute -bottom-[30%] -right-[20%] w-[60%] h-[60%] bg-purple-500/20 rounded-full blur-[120px] opacity-20"></div>
+        <div className="absolute -bottom-[30%] -right-[20%] w-[60%] h-[60%] bg-blue-500/20 rounded-full blur-[120px] opacity-20"></div>
       </div>
 
       <motion.div
@@ -177,6 +177,76 @@ const SignIn = () => {
             </>
           )}
 
+          {/* Network Info - Enhanced */}
+          <div className="mt-6 mb-4">
+            <div className="bg-gradient-to-r from-blue-500/10 via-blue-500/10 to-blue-500/10 border border-blue-500/20 rounded-2xl p-4 backdrop-blur-sm">
+              <div className="flex items-center justify-center gap-3">
+                {/* Network Icon */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-md"></div>
+                  <svg
+                    className="w-5 h-5 text-blue-400 relative z-10"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                  </svg>
+                </div>
+
+                {/* Network Details */}
+                <div className="flex flex-col items-start">
+                  <p className="text-white/50 text-[10px] uppercase tracking-wider font-medium">
+                    Connected Network
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {/* Status Indicator */}
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    <p className="text-white font-medium text-sm">
+                      Filecoin Calibration Testnet
+                    </p>
+                  </div>
+                </div>
+
+                {/* Chain ID Badge */}
+                <div className="ml-auto">
+                  <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full border border-purple-500/30">
+                    Chain: 314159
+                  </span>
+                </div>
+              </div>
+
+              {/* Additional Network Info */}
+              <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[10px]">
+                <div className="flex items-center gap-1 text-white/40">
+                  <svg
+                    className="w-3 h-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>Testnet Only</span>
+                </div>
+                <a
+                  href="https://faucet.calibnet.chainsafe-fil.io/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 flex items-center gap-1 transition duration-200"
+                >
+                  Get tFIL
+                  <ArrowUpRight size={12} />
+                </a>
+              </div>
+            </div>
+          </div>
+
           {/* Terms */}
           <p className="mt-8 text-xs text-center text-white/50 pb-3">
             By connecting, you accept the{" "}
@@ -189,6 +259,28 @@ const SignIn = () => {
             </Link>
             .
           </p>
+
+          {/* Back to Home */}
+          <div className="mt-6 text-center">
+            <Link
+              href="/"
+              className="text-white/70 hover:text-white text-sm flex items-center justify-center gap-1 transition duration-300"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Back to Home
+            </Link>
+          </div>
         </div>
       </motion.div>
     </div>
