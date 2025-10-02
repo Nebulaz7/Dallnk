@@ -547,9 +547,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Next.js Team**: For the excellent React framework
 - **Storacha**: For seamless IPFS integration
 
+## 👨‍💻 Authors
+
+Aderemi Ademola – (X: @crid_iv)
+Olaniyi Ezekiel – (X: @)
+Peters Joshua – (X: @joshpet77)
+
 ---
 
-**Built with ❤️ by the Dallnk team**
--
+## **Built with ❤️ by the Dallnk team**
 
 _Empowering decentralized data sharing through AI and blockchain technology_

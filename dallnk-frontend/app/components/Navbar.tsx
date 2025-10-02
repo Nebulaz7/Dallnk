@@ -54,17 +54,17 @@ const Navbar = () => {
         {/* Desktop Menu */}
         <ul className="hidden text-[18px] text-center md:flex gap-8 text-gray-100">
           <li>
-            <MotionLink href="/" className="hover:text-white" layout>
+            <MotionLink href="/home" className="hover:text-white" layout>
               Home
             </MotionLink>
           </li>
           <li>
-            <MotionLink href="/" className="hover:text-white" layout>
+            <MotionLink href="/signin" className="hover:text-white" layout>
               Explore
             </MotionLink>
           </li>
           <li>
-            <MotionLink href="/" className="hover:text-white" layout>
+            <MotionLink href="/signin" className="hover:text-white" layout>
               Community
             </MotionLink>
           </li>
@@ -145,16 +145,16 @@ const Navbar = () => {
           <ul className="flex flex-col gap-6 pl-6">
             <li className="gap-0">
               <Link
-                href="/docs"
+                href="/home"
                 className="text-2xl text-black border-b-2 border-black hover:text-3xl  transition-colors"
               >
-                Features
+                Home
                 <Feather className="inline-block ml-1" size={24} />
               </Link>
             </li>
             <li>
               <Link
-                href="https://github.com/Nebulaz7/gen-z.js"
+                href="/home"
                 className="text-2xl text-black border-b-2 border-black hover:text-3xl transition-colors"
               >
                 Marketplace
@@ -163,10 +163,10 @@ const Navbar = () => {
             </li>
             <li>
               <Link
-                href="/examples"
+                href="/signin"
                 className="text-2xl text-black border-b-2 border-black hover:text-3xl  transition-colors"
               >
-                Team
+                Community
                 <LaptopMinimal className="inline-block ml-0.5" size={24} />
               </Link>
             </li>
