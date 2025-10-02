@@ -17,7 +17,7 @@ import {
   Trash2,
   RotateCcw,
 } from "lucide-react";
-import { uploadToWeb3Storage, UploadResult } from "../../utils/web3storage";
+import { uploadToWeb3Storage, UploadResult } from "../../utils/storacha";
 import {
   verifyDataWithAI,
   VerificationResult,

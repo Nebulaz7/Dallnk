@@ -1,7 +1,7 @@
 // utils/contractSubmission.ts
 import { ethers } from "ethers";
 
-const CONTRACT_ADDRESS = "0x28791bF1c9F1F4385831236A53204dD90A1DEFAA";
+const CONTRACT_ADDRESS = "0xbDE02aE57E7BeC2483Ae66d50671a22436227220";
 const CONTRACT_ABI = [
   {
     inputs: [
@@ -22,6 +22,36 @@ const CONTRACT_ABI = [
     type: "function",
   },
   {
+    inputs: [],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "uint256",
+        name: "requestId",
+        type: "uint256",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "requester",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "refundAmount",
+        type: "uint256",
+      },
+    ],
+    name: "BountyCancelled",
+    type: "event",
+  },
+  {
     inputs: [
       {
         internalType: "uint256",
@@ -29,15 +59,10 @@ const CONTRACT_ABI = [
         type: "uint256",
       },
     ],
-    name: "confirmAndPay",
+    name: "cancelBounty",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
-  },
-  {
-    inputs: [],
-    stateMutability: "nonpayable",
-    type: "constructor",
   },
   {
     anonymous: false,
@@ -203,7 +228,7 @@ const CONTRACT_ABI = [
         type: "bool",
       },
     ],
-    name: "verifySubmittedData",
+    name: "verifyAndPay",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
