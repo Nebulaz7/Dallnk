@@ -31,6 +31,35 @@ export const verifyDataWithAI = async (
   fileSize: number
 ): Promise<VerificationResult> => {
   try {
+    // Basic validation checks
+    if (!allowedTypes.includes(fileType)) {
+      return {
+        isApproved: false,
+        confidence: 0,
+        reason: `File type ${fileType} is not allowed`,
+        analysis: {
+          formatMatch: false,
+          contentRelevance: 0,
+          qualityScore: 0,
+        },
+      };
+    }
+
+    if (fileSize > maxSize) {
+      return {
+        isApproved: false,
+        confidence: 0,
+        reason: `File size exceeds maximum allowed size of ${
+          maxSize / (1024 * 1024)
+        }MB`,
+        analysis: {
+          formatMatch: true,
+          contentRelevance: 0,
+          qualityScore: 0,
+        },
+      };
+    }
+
     // Call our secure server-side API route
     const response = await fetch("/api/verify", {
       method: "POST",

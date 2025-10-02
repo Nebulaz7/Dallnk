@@ -1,7 +1,7 @@
 // utils/bountyManagement.ts
 import { ethers } from "ethers";
 
-const CONTRACT_ADDRESS = "0x28791bF1c9F1F4385831236A53204dD90A1DEFAA";
+const CONTRACT_ADDRESS = "0xbDE02aE57E7BeC2483Ae66d50671a22436227220";
 const CONTRACT_ABI = [
   {
     inputs: [
@@ -22,6 +22,36 @@ const CONTRACT_ABI = [
     type: "function",
   },
   {
+    inputs: [],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "uint256",
+        name: "requestId",
+        type: "uint256",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "requester",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "refundAmount",
+        type: "uint256",
+      },
+    ],
+    name: "BountyCancelled",
+    type: "event",
+  },
+  {
     inputs: [
       {
         internalType: "uint256",
@@ -29,15 +59,10 @@ const CONTRACT_ABI = [
         type: "uint256",
       },
     ],
-    name: "confirmAndPay",
+    name: "cancelBounty",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
-  },
-  {
-    inputs: [],
-    stateMutability: "nonpayable",
-    type: "constructor",
   },
   {
     anonymous: false,
@@ -203,7 +228,7 @@ const CONTRACT_ABI = [
         type: "bool",
       },
     ],
-    name: "verifySubmittedData",
+    name: "verifyAndPay",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -399,7 +424,6 @@ const CONTRACT_ABI = [
     type: "function",
   },
 ];
-
 export interface BountySubmission {
   bountyId: string;
   description: string;
@@ -503,14 +527,11 @@ export const acceptSubmission = async (
     }
 
     // Estimate gas
-    const gasEstimate = await contract.verifySubmittedData.estimateGas(
-      bountyId,
-      true
-    );
+    const gasEstimate = await contract.verifyAndPay.estimateGas(bountyId, true);
     const gasLimit = Math.floor(Number(gasEstimate) * 1.2);
 
     // Accept the submission by verifying it
-    const transaction = await contract.verifySubmittedData(bountyId, true, {
+    const transaction = await contract.verifyAndPay(bountyId, true, {
       gasLimit,
     });
 
@@ -600,14 +621,14 @@ export const declineSubmission = async (
     }
 
     // Estimate gas
-    const gasEstimate = await contract.verifySubmittedData.estimateGas(
+    const gasEstimate = await contract.verifyAndPay.estimateGas(
       bountyId,
       false
     );
     const gasLimit = Math.floor(Number(gasEstimate) * 1.2);
 
     // Decline the submission by rejecting it
-    const transaction = await contract.verifySubmittedData(bountyId, false, {
+    const transaction = await contract.verifyAndPay(bountyId, false, {
       gasLimit,
     });
 
@@ -631,94 +652,6 @@ export const declineSubmission = async (
     console.error("Decline submission failed:", error);
 
     let errorMessage = "Failed to decline submission";
-
-    if (error instanceof Error && error.message?.includes("user rejected")) {
-      errorMessage = "Transaction rejected by user";
-    } else if (
-      error instanceof Error &&
-      error.message?.includes("insufficient funds")
-    ) {
-      errorMessage = "Insufficient funds for gas";
-    } else if (
-      error &&
-      typeof error === "object" &&
-      "reason" in error &&
-      typeof error.reason === "string"
-    ) {
-      errorMessage = error.reason;
-    } else if (error instanceof Error && error.message) {
-      errorMessage = error.message;
-    }
-
-    return {
-      success: false,
-      error: errorMessage,
-    };
-  }
-};
-
-// Release payment to submitter (after verification)
-export const releasePayment = async (
-  bountyId: string
-): Promise<ManagementResult> => {
-  try {
-    if (!window.ethereum) {
-      throw new Error("MetaMask not found");
-    }
-
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const contract = new ethers.Contract(
-      CONTRACT_ADDRESS,
-      CONTRACT_ABI,
-      signer
-    );
-
-    // Check if user is the bounty owner
-    const requestData = await contract.dataRequests(bountyId);
-    const userAddress = await signer.getAddress();
-
-    if (requestData[4].toLowerCase() !== userAddress.toLowerCase()) {
-      throw new Error("Only the bounty creator can release payment");
-    }
-
-    if (!requestData[7]) {
-      // isVerified
-      throw new Error("Submission must be verified before payment release");
-    }
-
-    if (requestData[8]) {
-      // isPaid
-      throw new Error("Payment already released");
-    }
-
-    // Estimate gas
-    const gasEstimate = await contract.confirmAndPay.estimateGas(bountyId);
-    const gasLimit = Math.floor(Number(gasEstimate) * 1.2);
-
-    // Release payment
-    const transaction = await contract.confirmAndPay(bountyId, { gasLimit });
-
-    console.log("Payment release transaction submitted:", transaction.hash);
-
-    const receipt = await transaction.wait();
-
-    if (receipt.status === 1) {
-      return {
-        success: true,
-        transactionHash: transaction.hash,
-      };
-    } else {
-      return {
-        success: false,
-        error: "Transaction failed",
-        transactionHash: transaction.hash,
-      };
-    }
-  } catch (error: unknown) {
-    console.error("Release payment failed:", error);
-
-    let errorMessage = "Failed to release payment";
 
     if (error instanceof Error && error.message?.includes("user rejected")) {
       errorMessage = "Transaction rejected by user";
