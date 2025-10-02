@@ -16,8 +16,9 @@ import {
   Link as LinkIcon,
   Trash2,
   RotateCcw,
+  Eye,
 } from "lucide-react";
-import { uploadToWeb3Storage, UploadResult } from "../../utils/storacha";
+import { uploadToStoracha, UploadResult } from "../../utils/storacha";
 import {
   verifyDataWithAI,
   VerificationResult,
@@ -29,7 +30,7 @@ import {
 } from "../../utils/contractSubmission";
 import {
   validateFileSubmission,
-  canSubmitToBounty,
+  canSubmitToRequest,
   trackSubmissionAttempt,
 } from "../../utils/rateLimiting";
 import { checkConnection } from "../../utils/contract";
@@ -201,11 +202,11 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
     if (!state.file || !bounty || !walletAddress) return;
 
     try {
+      // Validate file submission
       const validation = validateFileSubmission(
         state.file,
         walletAddress,
-        bounty.description,
-        bounty.requirements
+        bounty.id
       );
 
       if (!validation.isValid) {
@@ -217,6 +218,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
         return;
       }
 
+      // Check eligibility
       const eligibility = (await checkSubmissionEligibility(
         walletAddress,
         bounty.id
@@ -237,24 +239,31 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
         return;
       }
 
-      const directEligibility = canSubmitToBounty(walletAddress, bounty.id);
+      // Check rate limiting
+      const directEligibility = canSubmitToRequest(walletAddress, bounty.id);
       if (!directEligibility.canSubmit) {
         setState((prev) => ({
           ...prev,
           step: "error",
           error:
             directEligibility.reason ||
-            "Cannot submit to this bounty right now.",
+            "Cannot submit to this request right now.",
         }));
         return;
       }
 
+      // Step 1: Upload to Pinata via our API
       setState((prev) => ({ ...prev, step: "uploading", error: null }));
+      console.log("📤 Starting upload to Pinata...");
 
-      const uploadResult = await uploadToWeb3Storage(state.file);
+      const uploadResult = await uploadToStoracha(state.file);
+      console.log("✅ Upload successful:", uploadResult);
+
       setState((prev) => ({ ...prev, uploadResult }));
 
+      // Step 2: AI Verification
       setState((prev) => ({ ...prev, step: "verifying" }));
+      console.log("🤖 Starting AI verification...");
 
       const verificationResult = await verifyDataWithAI(
         uploadResult.cid,
@@ -264,6 +273,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
         uploadResult.size
       );
 
+      console.log("✅ Verification complete:", verificationResult);
       setState((prev) => ({ ...prev, verificationResult }));
 
       if (!verificationResult.isApproved) {
@@ -275,16 +285,19 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
         return;
       }
 
+      // Step 3: Submit to blockchain
       setState((prev) => ({ ...prev, step: "submitting" }));
+      console.log("⛓️ Submitting to blockchain...");
 
       trackSubmissionAttempt(walletAddress, bounty.id);
 
       const submissionResult = await submitDataToContract(
         bounty.id,
         uploadResult.cid,
-        state.description || `Data submission for bounty #${bounty.id}`
+        state.description || `Data submission for request #${bounty.id}`
       );
 
+      console.log("✅ Blockchain submission complete:", submissionResult);
       setState((prev) => ({ ...prev, submissionResult }));
 
       if (submissionResult.success) {
@@ -298,7 +311,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
         }));
       }
     } catch (error: unknown) {
-      console.error("Submission process failed:", error);
+      console.error("❌ Submission process failed:", error);
       const message =
         error instanceof Error ? error.message : "Submission process failed.";
       setState((prev) => ({
@@ -338,7 +351,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
       },
       {
         id: "uploading",
-        label: "Processing File",
+        label: "Upload to IPFS",
         icon: <Shield className="w-4 h-4" />,
       },
       {
@@ -379,11 +392,12 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
           className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-700">
             <div>
               <h3 className="text-xl font-bold text-white">Submit Data</h3>
               <p className="text-gray-400 text-sm">
-                Bounty #{bounty.id} • {bounty.bounty} tFIL
+                Request #{bounty.id} • {bounty.bounty} tFIL Bounty
               </p>
             </div>
             <button
@@ -396,29 +410,42 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
           </div>
 
           <div className="p-6 space-y-6">
+            {/* Progress Steps */}
             <div className="flex flex-wrap items-center gap-2 bg-gray-800/50 border border-gray-700 rounded-lg p-4">
               {steps.map((step, index) => {
                 const isActive = index <= currentStepIndex;
+                const isCurrent = index === currentStepIndex;
                 return (
                   <React.Fragment key={step.id}>
                     <div
-                      className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs border transition-colors ${
-                        isActive
+                      className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs border transition-all ${
+                        isCurrent
+                          ? "bg-blue-500 text-white border-blue-400"
+                          : isActive
                           ? "bg-blue-500/20 text-blue-300 border-blue-400/30"
                           : "bg-gray-800 text-gray-500 border-gray-700"
                       }`}
                     >
-                      {step.icon}
+                      {isCurrent && isProcessing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        step.icon
+                      )}
                       {step.label}
                     </div>
                     {index < steps.length - 1 && (
-                      <div className="w-4 h-px bg-gray-700/70" />
+                      <div
+                        className={`w-4 h-px transition-colors ${
+                          isActive ? "bg-blue-400" : "bg-gray-700/70"
+                        }`}
+                      />
                     )}
                   </React.Fragment>
                 );
               })}
             </div>
 
+            {/* Bounty Details */}
             <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3">
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <FileText className="w-4 h-4 text-blue-400" />
@@ -436,6 +463,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
               </p>
             </div>
 
+            {/* Wallet Warning */}
             {!walletAddress && (
               <div className="flex items-center gap-2 bg-amber-500/10 text-amber-300 border border-amber-400/30 rounded-lg px-4 py-3 text-sm">
                 <AlertCircle className="w-4 h-4" />
@@ -443,7 +471,8 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
               </div>
             )}
 
-            <div className="space-y-4">
+            {/* Description Input */}
+            <div className="space-y-2">
               <label className="block text-sm font-semibold text-white">
                 Submission Notes (optional)
               </label>
@@ -452,15 +481,16 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
                 onChange={handleDescriptionChange}
                 rows={3}
                 disabled={isProcessing}
-                placeholder="Add context or metadata for reviewers..."
-                className="w-full resize-none rounded-lg border border-gray-700 bg-gray-900/70 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                placeholder="Add context or metadata for the requester..."
+                className="w-full resize-none rounded-lg border border-gray-700 bg-gray-900/70 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 transition-colors"
               />
             </div>
 
+            {/* File Upload Zone */}
             <div
-              className={`rounded-2xl border-2 border-dashed transition-colors ${
+              className={`rounded-2xl border-2 border-dashed transition-all duration-200 ${
                 isDragging
-                  ? "border-blue-400 bg-blue-500/5"
+                  ? "border-blue-400 bg-blue-500/5 scale-[1.02]"
                   : "border-gray-700 bg-gray-900/40"
               }`}
               onDrop={handleDrop}
@@ -479,7 +509,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
                       : "Drag & drop your file or click to browse"}
                   </p>
                   <p className="text-xs text-gray-400">
-                    CSV, JSON, ZIP, PDF or images up to 100&nbsp;MB
+                    CSV, JSON, ZIP, PDF or images up to 100 MB
                   </p>
                 </div>
                 <input
@@ -492,15 +522,16 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
               </label>
             </div>
 
+            {/* Selected File Info */}
             {state.file && (
-              <div className="rounded-xl border border-gray-700 bg-gray-900/60 p-4">
+              <div className="rounded-xl border border-gray-700 bg-gray-900/60 p-4 space-y-4">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
                       <FileText className="w-5 h-5 text-blue-400" />
                     </div>
-                    <div>
-                      <p className="text-sm text-white font-medium">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-white font-medium truncate">
                         {state.file.name}
                       </p>
                       <p className="text-xs text-gray-400">
@@ -511,58 +542,79 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
                   <button
                     onClick={handleRemoveFile}
                     disabled={isProcessing}
-                    className="text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                    className="text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50 shrink-0"
                     title="Remove file"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
 
+                {/* Upload Result */}
                 {state.uploadResult && (
-                  <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 text-xs text-blue-200 space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 text-xs space-y-2">
+                    <div className="flex items-center gap-2 text-blue-300 font-medium">
                       <LinkIcon className="w-4 h-4" />
-                      <span>IPFS CID: {state.uploadResult.cid}</span>
+                      <span>Uploaded to Pinata IPFS</span>
                     </div>
-                    <div>Type: {state.uploadResult.type}</div>
-                    <div>Size: {formatBytes(state.uploadResult.size)}</div>
+                    <div className="text-blue-200/80 space-y-1">
+                      <div className="font-mono break-all">
+                        CID: {state.uploadResult.cid}
+                      </div>
+                      <div>Type: {state.uploadResult.type}</div>
+                      <div>Size: {formatBytes(state.uploadResult.size)}</div>
+                    </div>
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${state.uploadResult.cid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-300 hover:text-blue-200 transition-colors mt-1"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Preview on Gateway</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                 )}
 
+                {/* Verification Result */}
                 {state.verificationResult && (
-                  <div className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs text-emerald-200 space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs space-y-1">
+                    <div className="flex items-center gap-2 text-emerald-300 font-medium">
                       <Shield className="w-4 h-4" />
                       <span>AI Verification Passed</span>
                     </div>
-                    {state.verificationResult.confidence !== undefined && (
-                      <div>
-                        Confidence Score:{" "}
-                        {Math.round(state.verificationResult.confidence * 100)}%
-                      </div>
-                    )}
-                    {state.verificationResult.reason && (
-                      <div>{state.verificationResult.reason}</div>
-                    )}
+                    <div className="text-emerald-200/80 space-y-1">
+                      {state.verificationResult.confidence !== undefined && (
+                        <div>
+                          Confidence Score:{" "}
+                          {Math.round(state.verificationResult.confidence)}%
+                        </div>
+                      )}
+                      {state.verificationResult.reason && (
+                        <div>{state.verificationResult.reason}</div>
+                      )}
+                    </div>
                   </div>
                 )}
 
+                {/* Submitting State */}
                 {state.step === "submitting" && (
-                  <div className="mt-4 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3 text-xs text-indigo-200 flex items-center gap-2">
+                  <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3 text-xs text-indigo-200 flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Broadcasting transaction on-chain...
+                    Broadcasting transaction to Filecoin Calibration testnet...
                   </div>
                 )}
               </div>
             )}
 
+            {/* Error State */}
             {state.step === "error" && state.error && (
-              <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300 space-y-3">
-                <div className="flex items-center gap-2 font-semibold">
-                  <AlertCircle className="w-4 h-4" />
+              <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm space-y-3">
+                <div className="flex items-center gap-2 text-red-300 font-semibold">
+                  <AlertCircle className="w-5 h-5" />
                   Submission Failed
                 </div>
-                <p className="text-red-200/80">{state.error}</p>
+                <p className="text-red-200/80 leading-relaxed">{state.error}</p>
                 <button
                   onClick={handleRetry}
                   className="inline-flex items-center gap-2 text-xs text-red-200 hover:text-red-100 transition-colors"
@@ -573,37 +625,50 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
               </div>
             )}
 
+            {/* Success State */}
             {state.step === "success" && (
               <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 space-y-3">
-                <div className="flex items-center gap-2 text-emerald-300 font-semibold">
-                  <CheckCircle className="w-5 h-5" />
-                  Submission Successful
+                <div className="flex items-center gap-2 text-emerald-300 font-semibold text-lg">
+                  <CheckCircle className="w-6 h-6" />
+                  Submission Successful! 🎉
                 </div>
-                <p className="text-sm text-emerald-100/80">
-                  Your data has been submitted and is pending requester review.
+                <p className="text-sm text-emerald-100/80 leading-relaxed">
+                  Your data has been successfully submitted to the blockchain
+                  and is now pending requester review. The file is permanently
+                  stored on IPFS via Pinata.
                 </p>
-                {state.submissionResult && (
-                  <pre className="max-h-48 overflow-y-auto rounded-lg bg-black/40 p-3 text-xs text-emerald-200/80">
-                    {JSON.stringify(state.submissionResult, null, 2)}
-                  </pre>
+                {state.uploadResult && (
+                  <div className="text-xs text-emerald-200/70 space-y-1 pt-2 border-t border-emerald-500/20">
+                    <div>IPFS CID: {state.uploadResult.cid}</div>
+                    <div>Request ID: #{bounty.id}</div>
+                  </div>
                 )}
-                <div className="flex flex-wrap gap-3 pt-2">
-                  {state.submissionResult &&
-                  state.submissionResult.success &&
-                  state.submissionResult.transactionHash ? (
+                <div className="flex flex-wrap gap-3 pt-3">
+                  {state.submissionResult?.transactionHash && (
                     <a
                       href={`https://calibration.filfox.info/en/tx/${state.submissionResult.transactionHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200 hover:bg-emerald-500/20 transition-colors"
+                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200 hover:bg-emerald-500/20 transition-colors"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      View transaction
+                      View Transaction
                     </a>
-                  ) : null}
+                  )}
+                  {state.uploadResult && (
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${state.uploadResult.cid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200 hover:bg-emerald-500/20 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View on IPFS
+                    </a>
+                  )}
                   <button
                     onClick={resetAndClose}
-                    className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200 hover:bg-emerald-500/20 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200 hover:bg-emerald-500/20 transition-colors"
                   >
                     Close
                   </button>
@@ -611,18 +676,19 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
               </div>
             )}
 
+            {/* Action Buttons */}
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
               <button
                 onClick={resetAndClose}
                 disabled={isProcessing}
-                className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-60"
+                className="rounded-lg border border-gray-700 px-5 py-2.5 text-sm text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={startSubmissionProcess}
                 disabled={submitDisabled}
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02] hover:shadow-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 {isProcessing ? (
                   <>
@@ -632,7 +698,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
                 ) : (
                   <>
                     <UploadIcon className="w-4 h-4" />
-                    Submit to bounty
+                    Submit to Request
                   </>
                 )}
               </button>

@@ -10,12 +10,13 @@ import {
   CheckCircle,
   AlertCircle,
   FileText,
+  ExternalLink,
 } from "lucide-react";
 import { ethers } from "ethers";
 import { checkConnection } from "../../utils/contract";
 import SubmissionModal from "./SubmissionModal";
 
-const CONTRACT_ADDRESS = "0x28791bF1c9F1F4385831236A53204dD90A1DEFAA";
+const CONTRACT_ADDRESS = "0xbDE02aE57E7BeC2483Ae66d50671a22436227220";
 const CONTRACT_ABI = [
   {
     inputs: [
@@ -36,6 +37,36 @@ const CONTRACT_ABI = [
     type: "function",
   },
   {
+    inputs: [],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "uint256",
+        name: "requestId",
+        type: "uint256",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "requester",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "refundAmount",
+        type: "uint256",
+      },
+    ],
+    name: "BountyCancelled",
+    type: "event",
+  },
+  {
     inputs: [
       {
         internalType: "uint256",
@@ -43,15 +74,10 @@ const CONTRACT_ABI = [
         type: "uint256",
       },
     ],
-    name: "confirmAndPay",
+    name: "cancelBounty",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
-  },
-  {
-    inputs: [],
-    stateMutability: "nonpayable",
-    type: "constructor",
   },
   {
     anonymous: false,
@@ -217,7 +243,7 @@ const CONTRACT_ABI = [
         type: "bool",
       },
     ],
-    name: "verifySubmittedData",
+    name: "verifyAndPay",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -489,13 +515,17 @@ const BountyCard = ({
     }
     return {
       status: "Open",
-      color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+      color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
       icon: <FileText className="w-4 h-4" />,
     };
   };
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString();
+    return new Date(timestamp * 1000).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const formatAddress = (address: string) => {
@@ -513,6 +543,14 @@ const BountyCard = ({
     if (bounty.requester.toLowerCase() === walletAddress.toLowerCase())
       return false;
     return true;
+  };
+
+  const hasSubmission = () => {
+    return (
+      bounty.ipfsHash &&
+      bounty.ipfsHash !== "" &&
+      bounty.assignedMiner !== "0x0000000000000000000000000000000000000000"
+    );
   };
 
   const statusInfo = getStatusInfo();
@@ -564,6 +602,35 @@ const BountyCard = ({
         </p>
       </div>
 
+      {/* Submitted Data Section */}
+      {hasSubmission() && (
+        <div className="mb-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-blue-400 font-medium mb-1 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Data Submitted
+              </h4>
+              <p className="text-gray-400 text-xs">
+                By: {formatAddress(bounty.assignedMiner)}
+              </p>
+            </div>
+            <a
+              href={`https://gateway.pinata.cloud/ipfs/${bounty.ipfsHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+            >
+              View Data
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+          <div className="mt-2 text-xs text-gray-500 font-mono break-all">
+            IPFS: {bounty.ipfsHash}
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="flex items-center gap-2 text-sm">
@@ -588,24 +655,41 @@ const BountyCard = ({
       </div>
 
       {/* Action Button */}
-      {canSubmit() ? (
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => onSubmit(bounty)}
-          className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-600/25"
-        >
-          Submit Data
-        </motion.button>
-      ) : (
-        <div className="w-full sm:w-auto px-6 py-3 bg-gray-700/50 text-gray-400 rounded-lg font-medium text-center">
-          {!walletAddress
-            ? "Connect wallet to submit"
-            : bounty.requester.toLowerCase() === walletAddress.toLowerCase()
-            ? "Your bounty"
-            : "Not available"}
-        </div>
-      )}
+      <div className="flex gap-3">
+        {canSubmit() ? (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onSubmit(bounty)}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-600/25"
+          >
+            Submit Data
+          </motion.button>
+        ) : (
+          <div className="flex-1 px-6 py-3 bg-gray-700/50 text-gray-400 rounded-lg font-medium text-center">
+            {!walletAddress
+              ? "Connect wallet to submit"
+              : bounty.requester.toLowerCase() === walletAddress.toLowerCase()
+              ? "Your bounty"
+              : bounty.isPaid
+              ? "Bounty completed"
+              : "Submission pending"}
+          </div>
+        )}
+
+        {/* View Submitted Data Button (for completed bounties) */}
+        {bounty.isPaid && bounty.ipfsHash && (
+          <a
+            href={`https://gateway.pinata.cloud/ipfs/${bounty.ipfsHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            <ExternalLink className="w-4 h-4" />
+            View Data
+          </a>
+        )}
+      </div>
     </motion.div>
   );
 };
@@ -665,6 +749,9 @@ const Marketplace = () => {
   const [selectedBounty, setSelectedBounty] = useState<DataRequest | null>(
     null
   );
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "open" | "completed"
+  >("all");
 
   // Check wallet connection
   useEffect(() => {
@@ -698,21 +785,38 @@ const Marketplace = () => {
     setIsRefreshing(false);
   };
 
-  // Handle search
+  // Handle search and filter
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredBounties(bounties);
-      return;
+    let filtered = bounties;
+
+    // Apply status filter
+    if (filterStatus === "open") {
+      filtered = filtered.filter(
+        (b) =>
+          !b.isPaid &&
+          (!b.assignedMiner ||
+            b.assignedMiner === "0x0000000000000000000000000000000000000000")
+      );
+    } else if (filterStatus === "completed") {
+      filtered = filtered.filter((b) => b.isPaid);
     }
 
-    const filtered = bounties.filter(
-      (bounty) =>
-        bounty.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        bounty.requirements.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        bounty.requester.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(
+        (bounty) =>
+          bounty.description
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          bounty.requirements
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          bounty.requester.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
     setFilteredBounties(filtered);
-  }, [searchQuery, bounties]);
+  }, [searchQuery, bounties, filterStatus]);
 
   const handleSubmit = (bounty: DataRequest) => {
     if (!walletAddress) {
@@ -744,11 +848,12 @@ const Marketplace = () => {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white mb-2">Data Bounties</h1>
           <p className="text-gray-400">
-            Discover and submit data for active bounty requests
+            Discover and submit data for active bounty requests stored on IPFS
+            via Pinata
           </p>
         </div>
 
-        {/* Search and Refresh */}
+        {/* Search, Filter and Refresh */}
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -761,12 +866,46 @@ const Marketplace = () => {
             />
           </div>
 
+          {/* Status Filter */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilterStatus("all")}
+              className={`px-4 py-3 rounded-lg font-medium transition-all ${
+                filterStatus === "all"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilterStatus("open")}
+              className={`px-4 py-3 rounded-lg font-medium transition-all ${
+                filterStatus === "open"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              }`}
+            >
+              Open
+            </button>
+            <button
+              onClick={() => setFilterStatus("completed")}
+              className={`px-4 py-3 rounded-lg font-medium transition-all ${
+                filterStatus === "completed"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              }`}
+            >
+              Completed
+            </button>
+          </div>
+
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-600/25"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-600/25"
           >
             <RefreshCw
               className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
@@ -776,7 +915,7 @@ const Marketplace = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
             <div className="text-2xl font-bold text-white">
               {bounties.length}
@@ -784,7 +923,7 @@ const Marketplace = () => {
             <div className="text-gray-400 text-sm">Total Bounties</div>
           </div>
           <div className="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
-            <div className="text-2xl font-bold text-green-400">
+            <div className="text-2xl font-bold text-emerald-400">
               {
                 bounties.filter(
                   (b) =>
@@ -795,7 +934,21 @@ const Marketplace = () => {
                 ).length
               }
             </div>
-            <div className="text-gray-400 text-sm">Available</div>
+            <div className="text-gray-400 text-sm">Open</div>
+          </div>
+          <div className="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
+            <div className="text-2xl font-bold text-yellow-400">
+              {
+                bounties.filter(
+                  (b) =>
+                    !b.isPaid &&
+                    b.assignedMiner &&
+                    b.assignedMiner !==
+                      "0x0000000000000000000000000000000000000000"
+                ).length
+              }
+            </div>
+            <div className="text-gray-400 text-sm">In Review</div>
           </div>
           <div className="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
             <div className="text-2xl font-bold text-blue-400">
@@ -828,6 +981,10 @@ const Marketplace = () => {
               <p className="text-gray-400 text-lg mb-2">
                 {searchQuery
                   ? "No bounties match your search"
+                  : filterStatus === "open"
+                  ? "No open bounties available"
+                  : filterStatus === "completed"
+                  ? "No completed bounties yet"
                   : "No bounties available"}
               </p>
               <p className="text-gray-500 text-sm">
