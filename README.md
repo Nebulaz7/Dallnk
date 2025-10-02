@@ -547,15 +547,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Next.js Team**: For the excellent React framework
 - **Storacha**: For seamless IPFS integration
 
-## 📞 Support
-
-- **Documentation**: [docs.dallnk.com](https://docs.dallnk.com)
-- **Discord**: [Join our community](https://discord.gg/dallnk)
-- **Issues**: [GitHub Issues](https://github.com/cridiv/Dallnk/issues)
-- **Email**: support@dallnk.com
-
 ---
 
 **Built with ❤️ by the Dallnk team**
+-
 
 _Empowering decentralized data sharing through AI and blockchain technology_
