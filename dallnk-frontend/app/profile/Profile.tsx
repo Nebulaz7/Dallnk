@@ -11,6 +11,8 @@ import {
   Eye,
   TrendingUp,
   TrendingDown,
+  Lock,
+  CheckCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { checkConnection } from "../utils/contract";
@@ -505,9 +507,9 @@ const ProfileBanner = ({ walletAddress }: ProfileBannerProps) => {
               <Avatar
                 address={walletAddress}
                 size={
-                  window.innerWidth < 640
+                  typeof window !== "undefined" && window.innerWidth < 640
                     ? 76
-                    : window.innerWidth < 1024
+                    : typeof window !== "undefined" && window.innerWidth < 1024
                     ? 104
                     : 120
                 }
@@ -588,9 +590,10 @@ const StatCard = ({ icon, title, value, trend, trendValue }: StatCardProps) => (
 interface BountyCardProps {
   request: DataRequest;
   isOwn: boolean;
+  currentWallet: string;
 }
 
-const BountyCard = ({ request, isOwn }: BountyCardProps) => {
+const BountyCard = ({ request, isOwn, currentWallet }: BountyCardProps) => {
   const getStatusConfig = () => {
     if (request.isPaid)
       return {
@@ -623,6 +626,20 @@ const BountyCard = ({ request, isOwn }: BountyCardProps) => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  // EXCLUSIVE ACCESS: Only requester can view data after payment
+  const canViewData = () => {
+    if (!request.isPaid) return false;
+    return request.requester.toLowerCase() === currentWallet.toLowerCase();
+  };
+
+  const hasSubmission = () => {
+    return (
+      request.ipfsHash &&
+      request.ipfsHash !== "" &&
+      request.assignedMiner !== "0x0000000000000000000000000000000000000000"
+    );
   };
 
   const status = getStatusConfig();
@@ -658,10 +675,24 @@ const BountyCard = ({ request, isOwn }: BountyCardProps) => {
             {request.bounty} tFIL
           </span>
         </div>
-        {request.ipfsHash && (
-          <div className="flex items-center gap-1.5 text-gray-400">
-            <FileText className="w-4 h-4" />
-            <span className="text-xs sm:text-sm">Data Submitted</span>
+        {hasSubmission() && (
+          <div className="flex items-center gap-1.5">
+            {canViewData() ? (
+              <div className="flex items-center gap-1.5 text-green-400">
+                <CheckCircle className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">Data Available</span>
+              </div>
+            ) : request.isPaid ? (
+              <div className="flex items-center gap-1.5 text-blue-400">
+                <Lock className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">Data Submitted</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-yellow-400">
+                <FileText className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">In Review</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -674,19 +705,49 @@ const BountyCard = ({ request, isOwn }: BountyCardProps) => {
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-3">
           <span className="text-xs">ID: #{request.id}</span>
-          {request.ipfsHash && (
+
+          {/* ONLY show view button if user has access (requester + paid) */}
+          {canViewData() && request.ipfsHash && (
             <a
               href={`https://gateway.pinata.cloud/ipfs/${request.ipfsHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+              className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-colors shadow-lg"
             >
               <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">View</span>
+              <span>View Data</span>
             </a>
+          )}
+
+          {/* Show locked state if data exists but not accessible */}
+          {hasSubmission() && !canViewData() && request.isPaid && (
+            <div className="flex items-center gap-1 px-3 py-1 bg-gray-800/50 border border-gray-700 text-gray-400 rounded-lg text-xs">
+              <Lock className="w-3 h-3" />
+              <span>Private</span>
+            </div>
           )}
         </div>
       </div>
+
+      {/* IPFS CID - Only show to requester after payment */}
+      {canViewData() && request.ipfsHash && (
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <p className="text-xs text-gray-500 mb-1">IPFS CID:</p>
+          <p className="text-xs text-gray-400 font-mono bg-black/20 p-2 rounded break-all">
+            {request.ipfsHash}
+          </p>
+        </div>
+      )}
+
+      {/* Privacy notice for locked data */}
+      {hasSubmission() && !canViewData() && request.isPaid && (
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="flex items-start gap-2 text-xs text-gray-500">
+            <Lock className="w-3 h-3 mt-0.5 flex-shrink-0" />
+            <p>This data is private - accessible only to the requester</p>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -789,7 +850,7 @@ export default function ProfilePage() {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center max-w-md"
         >
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-blue-400/30 to-blue-500/90 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
             <User className="w-10 h-10 text-white" />
           </div>
           <h2 className="text-2xl font-bold mb-4">Connect Your Wallet</h2>
@@ -799,7 +860,7 @@ export default function ProfilePage() {
           </p>
           <a
             href="/signin"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-600 text-white rounded-lg font-medium transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-medium transition-all"
           >
             Connect Wallet
           </a>
@@ -880,7 +941,7 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 rounded-lg transition-all text-xs sm:text-sm font-medium whitespace-nowrap ${
                   activeTab === tab.id
-                    ? "bg-gradient-to-r from-blue-400/30 to-blue-500/90 text-white shadow-lg"
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
                     : "text-gray-400 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -923,6 +984,7 @@ export default function ProfilePage() {
                         key={request.id}
                         request={request}
                         isOwn={true}
+                        currentWallet={walletAddress}
                       />
                     ))}
                   </div>
@@ -965,6 +1027,7 @@ export default function ProfilePage() {
                         key={request.id}
                         request={request}
                         isOwn={false}
+                        currentWallet={walletAddress}
                       />
                     ))}
                   </div>
