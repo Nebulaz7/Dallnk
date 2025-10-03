@@ -11,6 +11,9 @@ import {
   AlertCircle,
   FileText,
   ExternalLink,
+  Lock,
+  Shield,
+  Eye,
 } from "lucide-react";
 import { ethers } from "ethers";
 import { checkConnection } from "../../utils/contract";
@@ -553,6 +556,33 @@ const BountyCard = ({
     );
   };
 
+  // EXCLUSIVE ACCESS: Only the requester can view data after payment
+  const canViewData = () => {
+    if (!walletAddress) return false;
+    if (!bounty.isPaid) return false;
+
+    // Only the requester (buyer) can view the data
+    return bounty.requester.toLowerCase() === walletAddress.toLowerCase();
+  };
+
+  // Check if user is the requester
+  const isRequester = () => {
+    if (!walletAddress) return false;
+    return bounty.requester.toLowerCase() === walletAddress.toLowerCase();
+  };
+
+  const getDataAccessMessage = () => {
+    if (!bounty.isPaid) {
+      return "Data is encrypted and locked until payment is released";
+    }
+
+    if (isRequester()) {
+      return "You have exclusive access to this data";
+    }
+
+    return "This data is private - Only accessible to the buyer";
+  };
+
   const statusInfo = getStatusInfo();
 
   return (
@@ -565,7 +595,7 @@ const BountyCard = ({
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
             <FileText className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
@@ -602,32 +632,80 @@ const BountyCard = ({
         </p>
       </div>
 
-      {/* Submitted Data Section */}
+      {/* Submitted Data Section - PRIVATE: ONLY REQUESTER CAN VIEW AFTER PAYMENT */}
       {hasSubmission() && (
-        <div className="mb-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+        <div className="mb-4 p-4 bg-gradient-to-r from-blue-900/20 to-blue-800/20 border border-blue-500/30 rounded-lg">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <h4 className="text-blue-400 font-medium mb-1 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Data Submitted
+                {canViewData() ? (
+                  <Eye className="w-4 h-4" />
+                ) : (
+                  <Lock className="w-4 h-4" />
+                )}
+                {canViewData() ? "Your Exclusive Data" : "Data Submitted"}
               </h4>
-              <p className="text-gray-400 text-xs">
+              <p className="text-gray-400 text-xs mb-2">
                 By: {formatAddress(bounty.assignedMiner)}
               </p>
+
+              {canViewData() ? (
+                <div className="flex items-center gap-2 text-emerald-400 text-xs">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>Payment completed - You have exclusive access</span>
+                </div>
+              ) : bounty.isPaid ? (
+                <div className="flex items-center gap-2 text-blue-400 text-xs">
+                  <Lock className="w-3 h-3" />
+                  <span>Private data - Accessible only to buyer</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-yellow-400 text-xs">
+                  <Shield className="w-3 h-3" />
+                  <span>Data encrypted - Awaiting payment</span>
+                </div>
+              )}
             </div>
-            <a
-              href={`https://gateway.pinata.cloud/ipfs/${bounty.ipfsHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
-            >
-              View Data
-              <ExternalLink className="w-4 h-4" />
-            </a>
+
+            {/* Show View button ONLY if user is requester AND paid */}
+            {canViewData() ? (
+              <a
+                href={`https://gateway.pinata.cloud/ipfs/${bounty.ipfsHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors shadow-lg shadow-blue-600/25"
+              >
+                <Eye className="w-4 h-4" />
+                View Data
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 border border-gray-700 text-gray-400 text-sm rounded-lg cursor-not-allowed">
+                <Lock className="w-4 h-4" />
+                <span className="hidden sm:inline">Private</span>
+              </div>
+            )}
           </div>
-          <div className="mt-2 text-xs text-gray-500 font-mono break-all">
-            IPFS: {bounty.ipfsHash}
-          </div>
+
+          {/* Only show IPFS CID to requester after payment */}
+          {canViewData() && (
+            <div className="mt-3 pt-3 border-t border-blue-500/20">
+              <p className="text-xs text-gray-500 mb-1">IPFS CID:</p>
+              <p className="text-xs text-gray-400 font-mono break-all bg-black/20 p-2 rounded">
+                {bounty.ipfsHash}
+              </p>
+            </div>
+          )}
+
+          {/* Privacy notice */}
+          {!canViewData() && (
+            <div className="mt-3 pt-3 border-t border-blue-500/20">
+              <div className="flex items-start gap-2 text-xs text-gray-500">
+                <Lock className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                <p className="leading-relaxed">{getDataAccessMessage()}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -648,7 +726,7 @@ const BountyCard = ({
         </div>
 
         <div className="flex items-center gap-2 text-sm">
-          <FileText className="w-4 h-4 text-purple-400" />
+          <FileText className="w-4 h-4 text-blue-400" />
           <span className="text-gray-400">ID:</span>
           <span className="text-white">#{bounty.id}</span>
         </div>
@@ -661,7 +739,7 @@ const BountyCard = ({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSubmit(bounty)}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-600/25"
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-600/25"
           >
             Submit Data
           </motion.button>
@@ -670,23 +748,24 @@ const BountyCard = ({
             {!walletAddress
               ? "Connect wallet to submit"
               : bounty.requester.toLowerCase() === walletAddress.toLowerCase()
-              ? "Your bounty"
+              ? "Your request"
               : bounty.isPaid
-              ? "Bounty completed"
+              ? "Request completed"
               : "Submission pending"}
           </div>
         )}
 
-        {/* View Submitted Data Button (for completed bounties) */}
-        {bounty.isPaid && bounty.ipfsHash && (
+        {/* View Data Button - ONLY shown to requester after payment */}
+        {canViewData() && bounty.ipfsHash && (
           <a
             href={`https://gateway.pinata.cloud/ipfs/${bounty.ipfsHash}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg"
           >
-            <ExternalLink className="w-4 h-4" />
-            View Data
+            <Eye className="w-4 h-4" />
+            <span className="hidden sm:inline">Access Data</span>
+            <span className="sm:hidden">Access</span>
           </a>
         )}
       </div>
@@ -709,29 +788,28 @@ const getActiveRequests = async () => {
     const requestCounter = await contract.requestCounter();
     const requests = [];
 
-    // Get all requests (both active and completed for display)
     for (let i = 1; i <= Number(requestCounter); i++) {
       try {
         const requestData = await contract.dataRequests(i);
 
         requests.push({
           id: i.toString(),
-          description: requestData[1], // description
-          requirements: requestData[2], // requirements
-          bounty: ethers.formatEther(requestData[3]), // bounty
-          requester: requestData[4], // requester
-          assignedMiner: requestData[5], // assignedMiner
-          ipfsHash: requestData[6], // ipfsHash
-          isVerified: requestData[7], // isVerified
-          isPaid: requestData[8], // isPaid
-          timestamp: Number(requestData[9]), // timestamp
+          description: requestData[1],
+          requirements: requestData[2],
+          bounty: ethers.formatEther(requestData[3]),
+          requester: requestData[4],
+          assignedMiner: requestData[5],
+          ipfsHash: requestData[6],
+          isVerified: requestData[7],
+          isPaid: requestData[8],
+          timestamp: Number(requestData[9]),
         });
       } catch (error) {
         console.error(`Error fetching request ${i}:`, error);
       }
     }
 
-    return requests.reverse(); // Show newest first
+    return requests.reverse();
   } catch (error) {
     console.error("Error fetching requests:", error);
     return [];
@@ -753,13 +831,11 @@ const Marketplace = () => {
     "all" | "open" | "completed"
   >("all");
 
-  // Check wallet connection
   useEffect(() => {
     const savedAddress = checkConnection();
     setWalletAddress(savedAddress);
   }, []);
 
-  // Fetch bounties from contract
   const fetchBounties = async () => {
     try {
       setIsLoading(true);
@@ -773,23 +849,19 @@ const Marketplace = () => {
     }
   };
 
-  // Initial load
   useEffect(() => {
     fetchBounties();
   }, []);
 
-  // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchBounties();
     setIsRefreshing(false);
   };
 
-  // Handle search and filter
   useEffect(() => {
     let filtered = bounties;
 
-    // Apply status filter
     if (filterStatus === "open") {
       filtered = filtered.filter(
         (b) =>
@@ -801,7 +873,6 @@ const Marketplace = () => {
       filtered = filtered.filter((b) => b.isPaid);
     }
 
-    // Apply search filter
     if (searchQuery.trim()) {
       filtered = filtered.filter(
         (bounty) =>
@@ -846,10 +917,12 @@ const Marketplace = () => {
       >
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white mb-2">Data Bounties</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">
+            Private Data Marketplace
+          </h1>
           <p className="text-gray-400">
-            Discover and submit data for active bounty requests stored on IPFS
-            via Pinata
+            Secure data exchange with end-to-end encryption - Exclusive buyer
+            access
           </p>
         </div>
 
@@ -859,7 +932,7 @@ const Marketplace = () => {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search bounties by description, requirements, or creator..."
+              placeholder="Search requests by description, requirements, or creator..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
@@ -905,7 +978,7 @@ const Marketplace = () => {
             whileTap={{ scale: 0.98 }}
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-400/30 to-blue-500/90 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-600/25"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-600/25"
           >
             <RefreshCw
               className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
@@ -920,7 +993,7 @@ const Marketplace = () => {
             <div className="text-2xl font-bold text-white">
               {bounties.length}
             </div>
-            <div className="text-gray-400 text-sm">Total Bounties</div>
+            <div className="text-gray-400 text-sm">Total Requests</div>
           </div>
           <div className="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
             <div className="text-2xl font-bold text-emerald-400">
@@ -980,12 +1053,12 @@ const Marketplace = () => {
               <FileText className="w-16 h-16 text-gray-500 mx-auto mb-4" />
               <p className="text-gray-400 text-lg mb-2">
                 {searchQuery
-                  ? "No bounties match your search"
+                  ? "No requests match your search"
                   : filterStatus === "open"
-                  ? "No open bounties available"
+                  ? "No open requests available"
                   : filterStatus === "completed"
-                  ? "No completed bounties yet"
-                  : "No bounties available"}
+                  ? "No completed requests yet"
+                  : "No requests available"}
               </p>
               <p className="text-gray-500 text-sm">
                 {searchQuery
