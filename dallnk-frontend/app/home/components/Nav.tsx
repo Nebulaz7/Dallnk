@@ -140,10 +140,18 @@ const Nav = () => {
 
       // Refresh the page to show the new bounty
       window.location.href = "/home";
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating bounty:", error);
-      const errorMessage =
-        error?.message || "Failed to create bounty. Please try again.";
+
+      // Use type guard to safely access error properties
+      let errorMessage = "Failed to create bounty. Please try again.";
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === "object" && "message" in error) {
+        errorMessage = String(error.message);
+      }
+
       alert(`❌ ${errorMessage}`);
     } finally {
       setIsSubmittingBounty(false);

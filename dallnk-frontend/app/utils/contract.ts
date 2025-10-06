@@ -444,8 +444,14 @@ export const checkAndSwitchNetwork = async () => {
       method: "wallet_switchEthereumChain",
       params: [{ chainId: CALIBRATION_CHAIN_ID }],
     });
-  } catch (switchError: any) {
-    if (switchError.code === 4902) {
+  } catch (switchError: unknown) {
+    // Add type guard to check if it's an error with a code property
+    if (
+      switchError &&
+      typeof switchError === "object" &&
+      "code" in switchError &&
+      switchError.code === 4902
+    ) {
       await window.ethereum.request({
         method: "wallet_addEthereumChain",
         params: [
@@ -556,12 +562,15 @@ export const announceDataRequest = async (
 
     const receipt = await tx.wait();
     return { tx, receipt };
-  } catch (error: any) {
-    if (error.code === "ACTION_REJECTED") {
-      throw new Error("Transaction rejected by user");
-    }
-    if (error.code === "INSUFFICIENT_FUNDS") {
-      throw new Error("Insufficient tFIL balance");
+  } catch (error: unknown) {
+    // Add proper type guards for error handling
+    if (error && typeof error === "object" && "code" in error) {
+      if (error.code === "ACTION_REJECTED") {
+        throw new Error("Transaction rejected by user");
+      }
+      if (error.code === "INSUFFICIENT_FUNDS") {
+        throw new Error("Insufficient tFIL balance");
+      }
     }
     throw error;
   }
