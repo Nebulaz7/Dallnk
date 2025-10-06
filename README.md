@@ -43,7 +43,7 @@ graph TB
 
     C --> F[Filecoin Testnet]
     D --> G[Gemini AI API]
-    E --> H[Storacha/IPFS]
+    E --> H[Pinata/IPFS]
 
     subgraph "Decentralized Infrastructure"
         F
@@ -59,7 +59,7 @@ graph TB
 
 1. **Frontend Layer**: Next.js 15.5.4 with TypeScript and TailwindCSS
 2. **Blockchain Layer**: Filecoin testnet smart contracts
-3. **Storage Layer**: Storacha (evolved from Web3.Storage) with IPFS
+3. **Storage Layer**: Pinata with IPFS
 4. **AI Layer**: Google Gemini 2.0 Flash for data verification
 5. **Authentication**: MetaMask wallet integration
 
@@ -79,7 +79,7 @@ interface StorageResult {
   error?: string;
 }
 
-// Upload to Filecoin via Storacha
+// Upload to Filecoin via Pinata
 export const uploadToFilecoin = async (
   file: File,
   email: string
@@ -299,8 +299,8 @@ npm install
 
 ```bash
 # Create .env.local file
-GEMINI_API_KEY=your_gemini_api_key
-NEXT_PUBLIC_STORACHA_EMAIL=your_email@example.com
+DALLNK_GEMINI_API_KEY=your_gemini_api_key
+PINATA_JWT=your_pinata_jwt
 ```
 
 4. **Run development server**
@@ -373,7 +373,7 @@ Response:
 #### File Upload
 
 ```typescript
-// Upload to Filecoin via Storacha
+// Upload to Filecoin via Pinata
 const result = await uploadToFilecoin(file, email);
 // Returns: { success: true, cid: "bafybeig..." }
 ```
@@ -439,8 +439,8 @@ if (verification.isValid && verification.confidence > 0.8) {
 1. **Connect repository** to Vercel
 2. **Set environment variables**:
    ```
-   GEMINI_API_KEY=your_key_here
-   NEXT_PUBLIC_STORACHA_EMAIL=your_email
+   DALLNK_GEMINI_API_KEY=your_key_here
+   NPINATA_JWT=your_jwt
    ```
 3. **Deploy**: Automatic deployment on git push
 
@@ -459,7 +459,7 @@ if (verification.isValid && verification.confidence > 0.8) {
 ### Production Considerations
 
 - **API Rate Limits**: Implement rate limiting for AI verification
-- **Storage Quotas**: Monitor Storacha usage limits
+- **Storage Quotas**: Monitor Pinata usage limits
 - **Gas Optimization**: Optimize smart contract interactions
 - **Error Handling**: Comprehensive error tracking and recovery
 
@@ -545,7 +545,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Filecoin Foundation**: For decentralized storage infrastructure
 - **Google AI**: For Gemini API access
 - **Next.js Team**: For the excellent React framework
-- **Storacha**: For seamless IPFS integration
+- **Pinata**: For seamless IPFS integration
 
 ## 👨‍💻 Authors
 

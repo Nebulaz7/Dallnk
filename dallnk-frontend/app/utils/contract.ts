@@ -7,7 +7,10 @@ declare global {
 
 import { ethers } from "ethers";
 
-const CONTRACT_ADDRESS = "0x28791bF1c9F1F4385831236A53204dD90A1DEFAA";
+const CONTRACT_ADDRESS = "0xbDE02aE57E7BeC2483Ae66d50671a22436227220";
+const CALIBRATION_CHAIN_ID = "0x4cb2f"; // 314159 in hex
+const RPC_URL = "https://api.calibration.node.glif.io/rpc/v1";
+
 const CONTRACT_ABI = [
   {
     inputs: [
@@ -28,6 +31,36 @@ const CONTRACT_ABI = [
     type: "function",
   },
   {
+    inputs: [],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "uint256",
+        name: "requestId",
+        type: "uint256",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "requester",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "refundAmount",
+        type: "uint256",
+      },
+    ],
+    name: "BountyCancelled",
+    type: "event",
+  },
+  {
     inputs: [
       {
         internalType: "uint256",
@@ -35,15 +68,10 @@ const CONTRACT_ABI = [
         type: "uint256",
       },
     ],
-    name: "confirmAndPay",
+    name: "cancelBounty",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
-  },
-  {
-    inputs: [],
-    stateMutability: "nonpayable",
-    type: "constructor",
   },
   {
     anonymous: false,
@@ -209,7 +237,7 @@ const CONTRACT_ABI = [
         type: "bool",
       },
     ],
-    name: "verifySubmittedData",
+    name: "verifyAndPay",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -406,9 +434,46 @@ const CONTRACT_ABI = [
   },
 ];
 
+// ===== Network Management =====
+
+export const checkAndSwitchNetwork = async () => {
+  if (!window.ethereum) throw new Error("MetaMask not found");
+
+  try {
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: CALIBRATION_CHAIN_ID }],
+    });
+  } catch (switchError: any) {
+    if (switchError.code === 4902) {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: CALIBRATION_CHAIN_ID,
+            chainName: "Filecoin Calibration",
+            nativeCurrency: {
+              name: "tFIL",
+              symbol: "tFIL",
+              decimals: 18,
+            },
+            rpcUrls: [RPC_URL],
+            blockExplorerUrls: ["https://calibration.filfox.info/"],
+          },
+        ],
+      });
+    } else {
+      throw switchError;
+    }
+  }
+};
+
+// ===== Wallet Connection =====
+
 export const connectWallet = async () => {
   if (typeof window !== "undefined" && window.ethereum) {
     try {
+      await checkAndSwitchNetwork();
       await window.ethereum.request({ method: "eth_requestAccounts" });
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -421,28 +486,141 @@ export const connectWallet = async () => {
   throw new Error("MetaMask not found");
 };
 
+export const connectWalletWithStorage = async (): Promise<string> => {
+  const address = await connectWallet();
+  saveWalletAddress(address);
+  return address;
+};
+
+export const disconnectWallet = (): void => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("walletAddress");
+  }
+};
+
+// ===== Wallet Listeners =====
+
+export const setupWalletListeners = (
+  onAccountsChanged: (accounts: string[]) => void,
+  onChainChanged: () => void
+) => {
+  if (window.ethereum) {
+    window.ethereum.on("accountsChanged", onAccountsChanged);
+    window.ethereum.on("chainChanged", onChainChanged);
+  }
+};
+
+export const removeWalletListeners = () => {
+  if (window.ethereum) {
+    window.ethereum.removeAllListeners("accountsChanged");
+    window.ethereum.removeAllListeners("chainChanged");
+  }
+};
+
+// ===== Local Storage =====
+
+export const checkConnection = (): string | null => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("walletAddress");
+  }
+  return null;
+};
+
+export const saveWalletAddress = (address: string): void => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("walletAddress", address);
+  }
+};
+
+// ===== Contract Write Functions =====
+
 export const announceDataRequest = async (
   description: string,
   requirements: string,
   bountyInFIL: string
 ) => {
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      signer
+    );
+
+    const bountyWei = ethers.parseEther(bountyInFIL);
+
+    const tx = await contract.announceDataRequest(description, requirements, {
+      value: bountyWei,
+    });
+
+    const receipt = await tx.wait();
+    return { tx, receipt };
+  } catch (error: any) {
+    if (error.code === "ACTION_REJECTED") {
+      throw new Error("Transaction rejected by user");
+    }
+    if (error.code === "INSUFFICIENT_FUNDS") {
+      throw new Error("Insufficient tFIL balance");
+    }
+    throw error;
+  }
+};
+
+export const submitDataForRequest = async (
+  requestId: string,
+  ipfsHash: string
+) => {
   const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
   const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-  const bountyWei = ethers.parseEther(bountyInFIL);
-
-  const tx = await contract.announceDataRequest(description, requirements, {
-    value: bountyWei,
-  });
-
-  return tx;
+  const tx = await contract.submitDataForRequest(requestId, ipfsHash);
+  const receipt = await tx.wait();
+  return { tx, receipt };
 };
 
+export const verifyAndPay = async (requestId: string, isValid: boolean) => {
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+  const tx = await contract.verifyAndPay(requestId, isValid);
+  const receipt = await tx.wait();
+  return { tx, receipt };
+};
+
+export const cancelBounty = async (requestId: string) => {
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+  const tx = await contract.cancelBounty(requestId);
+  const receipt = await tx.wait();
+  return { tx, receipt };
+};
+
+export const purchaseVerifiedData = async (
+  requestId: string,
+  paymentInFIL: string
+) => {
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+  const paymentWei = ethers.parseEther(paymentInFIL);
+
+  const tx = await contract.purchaseVerifiedData(requestId, {
+    value: paymentWei,
+  });
+  const receipt = await tx.wait();
+  return { tx, receipt };
+};
+
+// ===== Contract Read Functions =====
+
 export const getActiveRequests = async () => {
-  const provider = new ethers.JsonRpcProvider(
-    "https://api.calibration.node.glif.io/rpc/v1"
-  );
+  const provider = new ethers.JsonRpcProvider(RPC_URL);
   const contract = new ethers.Contract(
     CONTRACT_ADDRESS,
     CONTRACT_ABI,
@@ -468,27 +646,38 @@ export const getActiveRequests = async () => {
   return requests;
 };
 
-export const checkConnection = (): string | null => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("walletAddress");
+export const getRequestDetails = async (requestId: string) => {
+  const provider = new ethers.JsonRpcProvider(RPC_URL);
+  const contract = new ethers.Contract(
+    CONTRACT_ADDRESS,
+    CONTRACT_ABI,
+    provider
+  );
+
+  const details = await contract.getRequestDetails(requestId);
+  return {
+    description: details[0],
+    bounty: ethers.formatEther(details[1]),
+    requester: details[2],
+    ipfsHash: details[3],
+    isVerified: details[4],
+    isPaid: details[5],
+  };
+};
+
+// ===== Utility Functions =====
+
+export const getCurrentWalletAddress = async (): Promise<string | null> => {
+  if (window.ethereum) {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    return await signer.getAddress();
   }
   return null;
 };
 
-export const saveWalletAddress = (address: string): void => {
-  if (typeof window !== "undefined") {
-    localStorage.setItem("walletAddress", address);
-  }
-};
-
-export const disconnectWallet = (): void => {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("walletAddress");
-  }
-};
-
-export const connectWalletWithStorage = async (): Promise<string> => {
-  const address = await connectWallet();
-  saveWalletAddress(address);
-  return address;
+export const getBalance = async (address: string): Promise<string> => {
+  const provider = new ethers.JsonRpcProvider(RPC_URL);
+  const balance = await provider.getBalance(address);
+  return ethers.formatEther(balance);
 };

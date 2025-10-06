@@ -73,19 +73,24 @@ class RateLimiter {
 // Global rate limiters
 export const uploadRateLimiter = new RateLimiter(3, 300000); // 3 uploads per 5 minutes
 export const verificationRateLimiter = new RateLimiter(10, 60000); // 10 verifications per minute
-export const submissionRateLimiter = new RateLimiter(2, 600000); // 2 submissions per 10 minutes
+export const submissionRateLimiter = new RateLimiter(5, 600000); // 5 submissions per 10 minutes
+export const requestCreationRateLimiter = new RateLimiter(5, 300000); // 5 request creations per 5 minutes
 
 export const validateFileSubmission = (
   file: File,
   walletAddress: string,
-  bountyDescription: string,
-  bountyRequirements: string
+  requestId: string
 ): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
   // Wallet validation
   if (!walletAddress || !walletAddress.startsWith("0x")) {
     errors.push("Valid wallet connection required");
+  }
+
+  // Request ID validation
+  if (!requestId || requestId === "0") {
+    errors.push("Invalid request ID");
   }
 
   // File validation
@@ -125,15 +130,6 @@ export const validateFileSubmission = (
     }
   }
 
-  // Bounty validation
-  if (!bountyDescription || bountyDescription.trim().length < 10) {
-    errors.push("Bounty description is too short");
-  }
-
-  if (!bountyRequirements || bountyRequirements.trim().length < 10) {
-    errors.push("Bounty requirements are too short");
-  }
-
   // Rate limiting check
   if (!uploadRateLimiter.isAllowed(walletAddress)) {
     const resetTime = uploadRateLimiter.getResetTime(walletAddress);
@@ -149,22 +145,81 @@ export const validateFileSubmission = (
   };
 };
 
-export const canSubmitToBounty = (
+export const validateDataRequest = (
+  description: string,
+  requirements: string,
+  bountyInFIL: string,
+  walletAddress: string
+): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  // Wallet validation
+  if (!walletAddress || !walletAddress.startsWith("0x")) {
+    errors.push("Valid wallet connection required");
+  }
+
+  // Description validation
+  if (!description || description.trim().length < 10) {
+    errors.push("Description must be at least 10 characters");
+  }
+
+  if (description && description.trim().length > 500) {
+    errors.push("Description must not exceed 500 characters");
+  }
+
+  // Requirements validation
+  if (!requirements || requirements.trim().length < 10) {
+    errors.push("Requirements must be at least 10 characters");
+  }
+
+  if (requirements && requirements.trim().length > 1000) {
+    errors.push("Requirements must not exceed 1000 characters");
+  }
+
+  // Bounty validation
+  if (!bountyInFIL || parseFloat(bountyInFIL) <= 0) {
+    errors.push("Bounty must be greater than 0 tFIL");
+  }
+
+  if (bountyInFIL && parseFloat(bountyInFIL) < 0.001) {
+    errors.push("Minimum bounty is 0.001 tFIL");
+  }
+
+  // Rate limiting check
+  if (!requestCreationRateLimiter.isAllowed(walletAddress)) {
+    const resetTime = requestCreationRateLimiter.getResetTime(walletAddress);
+    const minutes = Math.ceil((resetTime - Date.now()) / 60000);
+    errors.push(
+      `Request creation rate limit exceeded. Try again in ${minutes} minute(s)`
+    );
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
+export const canSubmitToRequest = (
   walletAddress: string,
-  bountyId: string
+  requestId: string
 ): { canSubmit: boolean; reason?: string } => {
   if (!walletAddress) {
     return { canSubmit: false, reason: "Wallet not connected" };
   }
 
-  if (!submissionRateLimiter.isAllowed(`${walletAddress}-${bountyId}`)) {
+  if (!requestId || requestId === "0") {
+    return { canSubmit: false, reason: "Invalid request ID" };
+  }
+
+  if (!submissionRateLimiter.isAllowed(`${walletAddress}-${requestId}`)) {
     const resetTime = submissionRateLimiter.getResetTime(
-      `${walletAddress}-${bountyId}`
+      `${walletAddress}-${requestId}`
     );
     const minutes = Math.ceil((resetTime - Date.now()) / 60000);
     return {
       canSubmit: false,
-      reason: `Submission rate limit exceeded for this bounty. Try again in ${minutes} minute(s)`,
+      reason: `Submission rate limit exceeded for this request. Try again in ${minutes} minute(s)`,
     };
   }
 
@@ -173,7 +228,7 @@ export const canSubmitToBounty = (
 
 export const trackSubmissionAttempt = (
   walletAddress: string,
-  bountyId: string
+  requestId: string
 ): void => {
-  submissionRateLimiter.isAllowed(`${walletAddress}-${bountyId}`);
+  submissionRateLimiter.isAllowed(`${walletAddress}-${requestId}`);
 };
