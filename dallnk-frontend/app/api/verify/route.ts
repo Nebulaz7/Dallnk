@@ -25,8 +25,8 @@ interface VerificationResult {
 export async function POST(request: NextRequest) {
   try {
     // Check if API key is configured
-    if (!process.env.GEMINI_API_KEY) {
-      console.error("⚠️ GEMINI_API_KEY not configured");
+    if (!process.env.DALLNK_GEMINI_API_KEY) {
+      console.error("⚠️ DALLNK_GEMINI_API_KEY not configured");
       return NextResponse.json(
         { error: "AI verification service not configured" },
         { status: 500 }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Initialize Google Generative AI
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const genAI = new GoogleGenerativeAI(process.env.DALLNK_GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash-exp",
     });

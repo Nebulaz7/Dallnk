@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fontsource/orbitron": "^5.2.8",
+    "@google/genai": "^1.22.0",
     "@google/generative-ai": "^0.24.1",
     "@web3-storage/w3up-client": "^17.3.0",
     "ethers": "^6.15.0",
