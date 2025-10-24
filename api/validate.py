@@ -19,7 +19,7 @@ model_resnet = ResNet50(weights='imagenet', include_top=False, pooling='avg')
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model_bert = BertModel.from_pretrained('bert-base-uncased')
 print("ResNet50 model loaded successfully!")
-print(f"Model output shape: {model.output_shape}")
+print(f"Model output shape: {model_resnet.output_shape}")
 
 
 def extract_image_features(img_path):
